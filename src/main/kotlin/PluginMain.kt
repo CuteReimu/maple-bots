@@ -55,13 +55,13 @@ internal object PluginMain : KotlinPlugin(
                     group.sendMessage("${sender.nameCardOrNick} roll: ${Random.nextInt(0, 100)}")
                 } else if (content.startsWith("添加词条 ")) {
                     group.sendMessage("请输入要添加的内容")
-                    val addDbKey = content.substring(8)
+                    val addDbKey = content.substring(5)
                     addDbQQList[sender.id] = addDbKey
                 } else if (content.startsWith("删除词条 ")) {
-                    QunDb.data -= content.substring(8)
+                    QunDb.data -= content.substring(5)
                     group.sendMessage("删除词条成功")
                 } else if (content.startsWith("查询词条 ") || content.startsWith("搜索词条 ")) {
-                    val key = content.substring(8)
+                    val key = content.substring(5)
                     val res = QunDb.data.keys.filter { key in it }
                     if (res.isNotEmpty())
                         group.sendMessage(res.joinToString(separator = "\n", prefix = "查询到以下词条：\n"))
