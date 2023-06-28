@@ -94,7 +94,7 @@ internal object PluginMain : KotlinPlugin(
                             `is`.toExternalResource().use { group.uploadImage(it) }
                         }
                     }.getOrElse {
-                        logger.error("获取或上传封面失败", it)
+                        logger.error("获取或上传图片失败", it)
                         null
                     }
                 }
