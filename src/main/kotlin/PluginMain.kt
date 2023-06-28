@@ -54,9 +54,13 @@ internal object PluginMain : KotlinPlugin(
                 } else if (content == "roll") {
                     group.sendMessage("${sender.nameCardOrNick} roll: ${Random.nextInt(0, 100)}")
                 } else if (content.startsWith("添加词条 ")) {
-                    group.sendMessage("请输入要添加的内容")
                     val addDbKey = content.substring(5)
-                    addDbQQList[sender.id] = addDbKey
+                    if (addDbKey in QunDb.data) {
+                        group.sendMessage("词条已存在")
+                    } else {
+                        group.sendMessage("请输入要添加的内容")
+                        addDbQQList[sender.id] = addDbKey
+                    }
                 } else if (content.startsWith("删除词条 ")) {
                     QunDb.data -= content.substring(5)
                     group.sendMessage("删除词条成功")
