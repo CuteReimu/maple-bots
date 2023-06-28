@@ -53,18 +53,18 @@ internal object PluginMain : KotlinPlugin(
                     group.sendMessage(At(sender) + "pong")
                 } else if (content == "roll") {
                     group.sendMessage("${sender.nameCardOrNick} roll: ${Random.nextInt(0, 100)}")
-                } else if (content.startsWith("豆芽粉添加词条 ")) {
+                } else if (content.startsWith("添加词条 ")) {
                     group.sendMessage("请输入要添加的内容")
                     val addDbKey = content.substring(8)
                     addDbQQList[sender.id] = addDbKey
-                } else if (content.startsWith("豆芽粉删除词条 ")) {
+                } else if (content.startsWith("删除词条 ")) {
                     QunDb.data -= content.substring(8)
                     group.sendMessage("删除词条成功")
-                } else if (content.startsWith("豆芽粉查询词条 ") || content.startsWith("豆芽粉搜索词条 ")) {
+                } else if (content.startsWith("查询词条 ") || content.startsWith("搜索词条 ")) {
                     val key = content.substring(8)
                     val res = QunDb.data.keys.filter { key in it }
                     if (res.isNotEmpty())
-                        group.sendMessage(res.joinToString(separator = " ", prefix = "查询到以下词条 "))
+                        group.sendMessage(res.joinToString(separator = "\n", prefix = "查询到以下词条：\n"))
                     else
                         group.sendMessage("查询不到词条($key)")
                 } else {
