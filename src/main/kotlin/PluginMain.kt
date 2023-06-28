@@ -68,9 +68,9 @@ internal object PluginMain : KotlinPlugin(
                     val key = content.substring(5)
                     val res = QunDb.data.keys.filter { key in it }
                     if (res.isNotEmpty())
-                        group.sendMessage(res.joinToString(separator = "\n", prefix = "查询到以下词条：\n"))
+                        group.sendMessage(res.joinToString(separator = "\n", prefix = "搜索到以下词条：\n"))
                     else
-                        group.sendMessage("查询不到词条($key)")
+                        group.sendMessage("搜索不到词条($key)")
                 } else {
                     val value = QunDb.data[content]
                     if (value != null) {
