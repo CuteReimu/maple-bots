@@ -5,7 +5,7 @@ import net.mamoe.mirai.console.data.AutoSavePluginConfig
 import net.mamoe.mirai.console.data.value
 
 object DefaultQunDb : AutoSavePluginConfig("DefaultQunDb") {
-    val data: Map<String, List<RepeaterInterruptionConfig>> by value()
+    var data: Map<String, List<RepeaterInterruptionConfig>> by value()
 
     @Serializable
     class RepeaterInterruptionConfig(
