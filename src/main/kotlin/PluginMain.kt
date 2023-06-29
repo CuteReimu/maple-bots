@@ -16,6 +16,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.InputStream
 import java.time.Duration
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 
@@ -75,11 +76,11 @@ internal object PluginMain : KotlinPlugin(
                     }
                 } else if (content.startsWith("查询词条 ") || content.startsWith("搜索词条 ")) {
                     val key = content.substring(4).trim()
-                    val res = HashSet<String>()
+                    val res = TreeSet<String>()
                     res += QunDb.data.keys.filter { key in it }
                     res += DefaultQunDb.data.keys.filter { key in it }
                     if (res.isNotEmpty()) {
-                        val res1 = res.withIndex().map { (i, v) -> "$i. $v" }
+                        val res1 = res.withIndex().map { (i, v) -> "${i + 1}. $v" }
                         group.sendMessage(res1.joinToString(separator = "\n", prefix = "搜索到以下词条：\n"))
                     } else {
                         group.sendMessage("搜索不到词条($key)")
