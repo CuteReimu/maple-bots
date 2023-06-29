@@ -49,7 +49,7 @@ internal object PluginMain : KotlinPlugin(
                 } else if (content == "roll") {
                     group.sendMessage("${sender.nameCardOrNick} roll: ${Random.nextInt(0, 100)}")
                 } else if (content.startsWith("添加词条 ")) {
-                    val key = content.substring(5)
+                    val key = content.substring(4).trim()
                     if (key in QunDb.data || key in DefaultQunDb.data) {
                         group.sendMessage("词条已存在")
                     } else {
@@ -57,7 +57,7 @@ internal object PluginMain : KotlinPlugin(
                         addDbQQList[sender.id] = key to "添加词条成功"
                     }
                 } else if (content.startsWith("修改词条 ")) {
-                    val key = content.substring(5)
+                    val key = content.substring(4).trim()
                     if (key !in QunDb.data && key !in DefaultQunDb.data) {
                         group.sendMessage("词条不存在")
                     } else {
@@ -65,7 +65,7 @@ internal object PluginMain : KotlinPlugin(
                         addDbQQList[sender.id] = key to "修改词条成功"
                     }
                 } else if (content.startsWith("删除词条 ")) {
-                    val key = content.substring(5)
+                    val key = content.substring(4).trim()
                     if (key !in QunDb.data && key !in DefaultQunDb.data) {
                         group.sendMessage("词条不存在")
                     } else {
@@ -74,7 +74,7 @@ internal object PluginMain : KotlinPlugin(
                         group.sendMessage("删除词条成功")
                     }
                 } else if (content.startsWith("查询词条 ") || content.startsWith("搜索词条 ")) {
-                    val key = content.substring(5)
+                    val key = content.substring(4).trim()
                     val res = QunDb.data.keys.filter { key in it } + DefaultQunDb.data.keys.filter { key in it }
                     if (res.isNotEmpty())
                         group.sendMessage(res.joinToString(separator = "\n", prefix = "搜索到以下词条：\n"))
