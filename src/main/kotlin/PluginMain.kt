@@ -54,24 +54,29 @@ internal object PluginMain : KotlinPlugin(
                 } else if (content == "roll") {
                     group.sendMessage("${sender.nameCardOrNick} roll: ${Random.nextInt(0, 100)}")
                 } else if (content.startsWith("添加词条 ")) {
-                    val addDbKey = content.substring(5)
-                    if (addDbKey in QunDb.data) {
+                    val key = content.substring(5)
+                    if (key in QunDb.data) {
                         group.sendMessage("词条已存在")
                     } else {
                         group.sendMessage("请输入要添加的内容")
-                        addDbQQList[sender.id] = addDbKey to "添加词条成功"
+                        addDbQQList[sender.id] = key to "添加词条成功"
                     }
                 } else if (content.startsWith("修改词条 ")) {
-                    val addDbKey = content.substring(5)
-                    if (addDbKey !in QunDb.data) {
+                    val key = content.substring(5)
+                    if (key !in QunDb.data) {
                         group.sendMessage("词条不存在")
                     } else {
                         group.sendMessage("请输入要修改的内容")
-                        addDbQQList[sender.id] = addDbKey to "修改词条成功"
+                        addDbQQList[sender.id] = key to "修改词条成功"
                     }
                 } else if (content.startsWith("删除词条 ")) {
-                    QunDb.data -= content.substring(5)
-                    group.sendMessage("删除词条成功")
+                    val key = content.substring(5)
+                    if (key !in QunDb.data) {
+                        group.sendMessage("词条不存在")
+                    } else {
+                        QunDb.data -= key
+                        group.sendMessage("删除词条成功")
+                    }
                 } else if (content.startsWith("查询词条 ") || content.startsWith("搜索词条 ")) {
                     val key = content.substring(5)
                     val res = QunDb.data.keys.filter { key in it }
