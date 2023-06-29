@@ -75,11 +75,15 @@ internal object PluginMain : KotlinPlugin(
                     }
                 } else if (content.startsWith("查询词条 ") || content.startsWith("搜索词条 ")) {
                     val key = content.substring(4).trim()
-                    val res = QunDb.data.keys.filter { key in it } + DefaultQunDb.data.keys.filter { key in it }
-                    if (res.isNotEmpty())
-                        group.sendMessage(res.joinToString(separator = "\n", prefix = "搜索到以下词条：\n"))
-                    else
+                    val res = HashSet<String>()
+                    res += QunDb.data.keys.filter { key in it }
+                    res += DefaultQunDb.data.keys.filter { key in it }
+                    if (res.isNotEmpty()) {
+                        val res1 = res.withIndex().map { (i, v) -> "$i. $v" }
+                        group.sendMessage(res1.joinToString(separator = "\n", prefix = "搜索到以下词条：\n"))
+                    } else {
                         group.sendMessage("搜索不到词条($key)")
+                    }
                 } else {
                     val lastKey = addDbQQList.remove(sender.id)
                     if (lastKey != null) { // 添加词条
