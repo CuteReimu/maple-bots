@@ -44,12 +44,7 @@ internal object PluginMain : KotlinPlugin(
                 return@subscribeAlways
             launch {
                 val content = message.contentToString()
-                val lastKey = addDbQQList.remove(sender.id)
-                if (lastKey != null) {
-                    val message2 = message.filterNot { it is MessageSource }.toMessageChain()
-                    QunDb.data += lastKey.first to message2.serializeToJsonString()
-                    group.sendMessage(lastKey.second)
-                } else if (content == "ping") {
+                if (content == "ping") {
                     group.sendMessage(At(sender) + "pong")
                 } else if (content == "roll") {
                     group.sendMessage("${sender.nameCardOrNick} roll: ${Random.nextInt(0, 100)}")
@@ -86,13 +81,20 @@ internal object PluginMain : KotlinPlugin(
                     else
                         group.sendMessage("搜索不到词条($key)")
                 } else {
-                    val value = QunDb.data[content]
-                    if (value != null) {
-                        group.sendMessage(MessageChain.deserializeFromJsonString(value))
-                    } else {
-                        lookUpInDefaultQunDb(group, content)?.let {
-                            QunDb.data += content to it.serializeToJsonString()
-                            group.sendMessage(it)
+                    val lastKey = addDbQQList.remove(sender.id)
+                    if (lastKey != null) { // 添加词条
+                        val message2 = message.filterNot { it is MessageSource }.toMessageChain()
+                        QunDb.data += lastKey.first to message2.serializeToJsonString()
+                        group.sendMessage(lastKey.second)
+                    } else { // 调用词条
+                        val value = QunDb.data[content]
+                        if (value != null) {
+                            group.sendMessage(MessageChain.deserializeFromJsonString(value))
+                        } else {
+                            lookUpInDefaultQunDb(group, content)?.let {
+                                QunDb.data += content to it.serializeToJsonString()
+                                group.sendMessage(it)
+                            }
                         }
                     }
                 }
