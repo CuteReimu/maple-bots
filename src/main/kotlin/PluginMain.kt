@@ -31,7 +31,7 @@ internal object PluginMain : KotlinPlugin(
         DefaultQunDb.reload()
         QunDb.reload()
 
-        val addDbQQList = ConcurrentHashMap<Long, String>()
+        val addDbQQList = ConcurrentHashMap<Long, Pair<String, String>>()
 
         globalEventChannel().subscribeAlways(
             GroupMessageEvent::class,
@@ -47,8 +47,8 @@ internal object PluginMain : KotlinPlugin(
                 val lastKey = addDbQQList.remove(sender.id)
                 if (lastKey != null) {
                     val message2 = message.filterNot { it is MessageSource }.toMessageChain()
-                    QunDb.data += lastKey to message2.serializeToJsonString()
-                    group.sendMessage("添加词条成功")
+                    QunDb.data += lastKey.first to message2.serializeToJsonString()
+                    group.sendMessage(lastKey.second)
                 } else if (content == "ping") {
                     group.sendMessage(At(sender) + "pong")
                 } else if (content == "roll") {
@@ -59,7 +59,15 @@ internal object PluginMain : KotlinPlugin(
                         group.sendMessage("词条已存在")
                     } else {
                         group.sendMessage("请输入要添加的内容")
-                        addDbQQList[sender.id] = addDbKey
+                        addDbQQList[sender.id] = addDbKey to "添加词条成功"
+                    }
+                } else if (content.startsWith("修改词条 ")) {
+                    val addDbKey = content.substring(5)
+                    if (addDbKey !in QunDb.data) {
+                        group.sendMessage("词条不存在")
+                    } else {
+                        group.sendMessage("请输入要修改的内容")
+                        addDbQQList[sender.id] = addDbKey to "修改词条成功"
                     }
                 } else if (content.startsWith("删除词条 ")) {
                     QunDb.data -= content.substring(5)
