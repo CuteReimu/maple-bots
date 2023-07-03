@@ -8,5 +8,8 @@ import net.mamoe.mirai.console.data.value
 object Config : AutoSavePluginConfig("Config") {
     @ValueDescription("生效的QQ群")
     @ValueName("qq_groups")
-    val qqGroups: List<Long> by value(listOf(12345678L))
+    var qqGroups: List<Long> by value(listOf(12345678L))
+
+    @ValueDescription("管理员QQ号")
+    val admin: Long by value(12345678L)
 }

@@ -7,6 +7,7 @@ import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.EventPriority
+import net.mamoe.mirai.event.events.FriendMessageEvent
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.globalEventChannel
 import net.mamoe.mirai.message.data.*
@@ -100,6 +101,41 @@ internal object PluginMain : KotlinPlugin(
                                 QunDb.data += content to it.serializeToJsonString()
                                 group.sendMessage(it)
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        globalEventChannel().subscribeAlways(
+            FriendMessageEvent::class,
+            CoroutineExceptionHandler { _, throwable ->
+                logger.error(throwable)
+            },
+            priority = EventPriority.MONITOR,
+        ) {
+            if (sender.id != Config.admin)
+                return@subscribeAlways
+            launch {
+                val content = message.contentToString()
+                if (content.startsWith("增加冒险岛QQ群 ")) {
+                    runCatching {
+                        val qqGroup = content.substring(9).toLong()
+                        if (qqGroup in Config.qqGroups) {
+                            sender.sendMessage("该QQ群已存在")
+                        } else {
+                            Config.qqGroups += qqGroup
+                            sender.sendMessage("增加QQ群成功")
+                        }
+                    }
+                } else if (content.startsWith("删除冒险岛QQ群 ")) {
+                    runCatching {
+                        val qqGroup = content.substring(9).toLong()
+                        if (qqGroup !in Config.qqGroups) {
+                            sender.sendMessage("该QQ群不存在")
+                        } else {
+                            Config.qqGroups -= qqGroup
+                            sender.sendMessage("删除QQ群成功")
                         }
                     }
                 }
