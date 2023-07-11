@@ -212,9 +212,13 @@ internal object PluginMain : KotlinPlugin(
                     val now = System.currentTimeMillis()
                     if (now - Config.imageExpireHours * 3600 * 1000 >= imageData.time) {
                         changed = true
-                        ImageCache.data += m.imageId to ImageData(imageData.img, now)
-                        return@map Base64.getDecoder().decode(imageData.img).toExternalResource().use {
-                            group.uploadImage(it)
+                        Base64.getDecoder().decode(imageData.img).toExternalResource().use {
+                            val image = group.uploadImage(it)
+                            val map = ImageCache.data.toMutableMap()
+                            map -= m.imageId
+                            map += image.imageId to ImageData(imageData.img, now)
+                            ImageCache.data = map
+                            return@map image
                         }
                     }
                 }
