@@ -12,4 +12,8 @@ object Config : AutoSavePluginConfig("Config") {
 
     @ValueDescription("管理员QQ号")
     val admin: Long by value(12345678L)
+
+    @ValueDescription("图片超时时间（单位：小时）")
+    @ValueName("image_expire_hours")
+    val imageExpireHours: Long by value(72L)
 }

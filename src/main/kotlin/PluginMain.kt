@@ -2,6 +2,7 @@ package net.cutereimu.maplebots
 
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
+import net.cutereimu.maplebots.ImageCache.ImageData
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.contact.Group
@@ -11,6 +12,7 @@ import net.mamoe.mirai.event.events.FriendMessageEvent
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.globalEventChannel
 import net.mamoe.mirai.message.data.*
+import net.mamoe.mirai.message.data.Image.Key.queryUrl
 import net.mamoe.mirai.message.data.MessageChain.Companion.serializeToJsonString
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import okhttp3.OkHttpClient
@@ -32,6 +34,7 @@ internal object PluginMain : KotlinPlugin(
         Config.reload()
         DefaultQunDb.reload()
         QunDb.reload()
+        ImageCache.reload()
 
         val addDbQQList = ConcurrentHashMap<Long, Pair<String, String>>()
 
@@ -91,14 +94,16 @@ internal object PluginMain : KotlinPlugin(
                     if (lastKey != null) { // 添加词条
                         val message2 = message.filterNot { it is MessageSource }.toMessageChain()
                         QunDb.data += lastKey.first to message2.serializeToJsonString()
+                        saveImage(message2)
                         group.sendMessage(lastKey.second)
                     } else { // 调用词条
                         val value = QunDb.data[content]
                         if (value != null) {
-                            group.sendMessage(MessageChain.deserializeFromJsonString(value))
+                            group.sendMessage(ensureImage(group, MessageChain.deserializeFromJsonString(value)))
                         } else {
                             lookUpInDefaultQunDb(group, content)?.let {
                                 QunDb.data += content to it.serializeToJsonString()
+                                saveImage(it)
                                 group.sendMessage(it)
                             }
                         }
@@ -178,5 +183,38 @@ internal object PluginMain : KotlinPlugin(
         if (resp.code != 200)
             throw Exception("请求错误，错误码：${resp.code}，返回内容：${resp.message}")
         return resp.body!!.byteStream()
+    }
+
+    private suspend fun saveImage(mc: MessageChain) {
+        for (m in mc) {
+            if (m is Image) {
+                try {
+                    val buf = getPic(m.queryUrl()).use { it.readAllBytes() }
+                    val encodedImage = Base64.getEncoder().encodeToString(buf)
+                    ImageCache.data += m.imageId to ImageData(encodedImage, System.currentTimeMillis())
+                } catch (e: Exception) {
+                    logger.error("保存图片失败", e)
+                }
+            }
+        }
+    }
+
+    private suspend fun ensureImage(group: Group, ms: MessageChain): MessageChain {
+        if (ms.all { it !is Image })
+            return ms
+        return ms.map { m ->
+            if (m is Image) {
+                ImageCache.data[m.imageId]?.also { imageData ->
+                    val now = System.currentTimeMillis()
+                    if (now - Config.imageExpireHours * 3600 * 1000 >= imageData.time) {
+                        ImageCache.data += m.imageId to ImageData(imageData.img, now)
+                        return@map Base64.getDecoder().decode(imageData.img).toExternalResource().use {
+                            group.uploadImage(it)
+                        }
+                    }
+                }
+            }
+            m
+        }.toMessageChain()
     }
 }
