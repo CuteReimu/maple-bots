@@ -99,7 +99,10 @@ internal object PluginMain : KotlinPlugin(
                     } else { // 调用词条
                         val value = QunDb.data[content]
                         if (value != null) {
-                            group.sendMessage(ensureImage(group, MessageChain.deserializeFromJsonString(value)))
+                            val mc1 = MessageChain.deserializeFromJsonString(value)
+                            val mc2 = ensureImage(group, mc1)
+                            if (mc1 !== mc2) QunDb.data += content to mc2.serializeToJsonString()
+                            group.sendMessage(mc2)
                         } else {
                             lookUpInDefaultQunDb(group, content)?.let {
                                 QunDb.data += content to it.serializeToJsonString()
@@ -202,11 +205,13 @@ internal object PluginMain : KotlinPlugin(
     private suspend fun ensureImage(group: Group, ms: MessageChain): MessageChain {
         if (ms.all { it !is Image })
             return ms
-        return ms.map { m ->
+        var changed = false
+        val l = ms.map { m ->
             if (m is Image) {
                 ImageCache.data[m.imageId]?.also { imageData ->
                     val now = System.currentTimeMillis()
                     if (now - Config.imageExpireHours * 3600 * 1000 >= imageData.time) {
+                        changed = true
                         ImageCache.data += m.imageId to ImageData(imageData.img, now)
                         return@map Base64.getDecoder().decode(imageData.img).toExternalResource().use {
                             group.uploadImage(it)
@@ -215,6 +220,7 @@ internal object PluginMain : KotlinPlugin(
                 }
             }
             m
-        }.toMessageChain()
+        }
+        return if (changed) l.toMessageChain() else ms
     }
 }
