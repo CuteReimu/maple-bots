@@ -214,10 +214,8 @@ internal object PluginMain : KotlinPlugin(
                         changed = true
                         Base64.getDecoder().decode(imageData.img).toExternalResource().use {
                             val image = group.uploadImage(it)
-                            val map = ImageCache.data.toMutableMap()
-                            map -= m.imageId
-                            map += image.imageId to ImageData(imageData.img, now)
-                            ImageCache.data = map
+                            // TODO 需要定时清除image缓存，以防越存越多
+                            ImageCache.data += image.imageId to ImageData(imageData.img, now)
                             return@map image
                         }
                     }
