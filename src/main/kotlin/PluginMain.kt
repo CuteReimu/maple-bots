@@ -214,7 +214,12 @@ internal object PluginMain : KotlinPlugin(
                         changed = true
                         Base64.getDecoder().decode(imageData.img).toExternalResource().use {
                             val image = group.uploadImage(it)
-                            // TODO 需要定时清除image缓存，以防越存越多
+                            val data = ImageCache.data.toMutableMap()
+                            data += image.imageId to ImageData(imageData.img, now)
+                            for (entry in data) {
+                                if (now - Config.imageExpireHours * 3600 * 1000 >= entry.value.time)
+                                    entry.setValue(ImageData("", entry.value.time))
+                            }
                             ImageCache.data += image.imageId to ImageData(imageData.img, now)
                             return@map image
                         }
