@@ -7,7 +7,6 @@ import net.mamoe.mirai.console.data.value
 object ImageCache : AutoSavePluginData("ImageCache") {
     @Serializable
     class ImageData(
-        val img: String,
         val time: Long,
     )
 

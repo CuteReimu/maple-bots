@@ -17,6 +17,7 @@ import net.mamoe.mirai.message.data.MessageChain.Companion.serializeToJsonString
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.File
 import java.io.InputStream
 import java.time.Duration
 import java.util.*
@@ -193,8 +194,9 @@ internal object PluginMain : KotlinPlugin(
             if (m is Image) {
                 try {
                     val buf = getPic(m.queryUrl()).use { it.readAllBytes() }
-                    val encodedImage = Base64.getEncoder().encodeToString(buf)
-                    ImageCache.data += m.imageId to ImageData(encodedImage, System.currentTimeMillis())
+                    File("chat-images").apply { if (!exists()) mkdirs() }
+                    File("chat-images${File.separatorChar}${m.imageId}").writeBytes(buf)
+                    ImageCache.data += m.imageId to ImageData(System.currentTimeMillis())
                 } catch (e: Exception) {
                     logger.error("保存图片失败", e)
                 }
@@ -212,15 +214,13 @@ internal object PluginMain : KotlinPlugin(
                     val now = System.currentTimeMillis()
                     if (now - Config.imageExpireHours * 3600 * 1000 >= imageData.time) {
                         changed = true
-                        Base64.getDecoder().decode(imageData.img).toExternalResource().use {
-                            val image = group.uploadImage(it)
-                            val data = ImageCache.data.toMutableMap()
-                            data += image.imageId to ImageData(imageData.img, now)
-                            for (entry in data) {
-                                if (now - Config.imageExpireHours * 3600 * 1000 >= entry.value.time)
-                                    entry.setValue(ImageData("", entry.value.time))
-                            }
-                            ImageCache.data += image.imageId to ImageData(imageData.img, now)
+                        val file = File("chat-images${File.separatorChar}${m.imageId}")
+                        if (file.exists()) {
+                            val buf = file.readBytes()
+                            val image = buf.toExternalResource().use { group.uploadImage(it) }
+                            File("chat-images").apply { if (!exists()) mkdirs() }
+                            File("chat-images${File.separatorChar}${m.imageId}").writeBytes(buf)
+                            ImageCache.data += image.imageId to ImageData(now)
                             return@map image
                         }
                     }
