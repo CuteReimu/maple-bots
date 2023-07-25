@@ -56,39 +56,47 @@ internal object PluginMain : KotlinPlugin(
                     group.sendMessage("${sender.nameCardOrNick} roll: ${Random.nextInt(0, 100)}")
                 } else if (content.startsWith("添加词条 ")) {
                     val key = content.substring(4).trim()
-                    if (key in QunDb.data || key in DefaultQunDb.data) {
-                        group.sendMessage("词条已存在")
-                    } else {
-                        group.sendMessage("请输入要添加的内容")
-                        addDbQQList[sender.id] = key to "添加词条成功"
+                    if (key.isNotEmpty()) {
+                        if (key in QunDb.data || key in DefaultQunDb.data) {
+                            group.sendMessage("词条已存在")
+                        } else {
+                            group.sendMessage("请输入要添加的内容")
+                            addDbQQList[sender.id] = key to "添加词条成功"
+                        }
                     }
                 } else if (content.startsWith("修改词条 ")) {
                     val key = content.substring(4).trim()
-                    if (key !in QunDb.data && key !in DefaultQunDb.data) {
-                        group.sendMessage("词条不存在")
-                    } else {
-                        group.sendMessage("请输入要修改的内容")
-                        addDbQQList[sender.id] = key to "修改词条成功"
+                    if (key.isNotEmpty()) {
+                        if (key !in QunDb.data && key !in DefaultQunDb.data) {
+                            group.sendMessage("词条不存在")
+                        } else {
+                            group.sendMessage("请输入要修改的内容")
+                            addDbQQList[sender.id] = key to "修改词条成功"
+                        }
                     }
                 } else if (content.startsWith("删除词条 ")) {
                     val key = content.substring(4).trim()
-                    if (key !in QunDb.data && key !in DefaultQunDb.data) {
-                        group.sendMessage("词条不存在")
-                    } else {
-                        QunDb.data -= key
-                        DefaultQunDb.data -= key
-                        group.sendMessage("删除词条成功")
+                    if (key.isNotEmpty()) {
+                        if (key !in QunDb.data && key !in DefaultQunDb.data) {
+                            group.sendMessage("词条不存在")
+                        } else {
+                            QunDb.data -= key
+                            DefaultQunDb.data -= key
+                            group.sendMessage("删除词条成功")
+                        }
                     }
                 } else if (content.startsWith("查询词条 ") || content.startsWith("搜索词条 ")) {
                     val key = content.substring(4).trim()
-                    val res = TreeSet<String>()
-                    res += QunDb.data.keys.filter { key in it }
-                    res += DefaultQunDb.data.keys.filter { key in it }
-                    if (res.isNotEmpty()) {
-                        val res1 = res.withIndex().map { (i, v) -> "${i + 1}. $v" }
-                        group.sendMessage(res1.joinToString(separator = "\n", prefix = "搜索到以下词条：\n"))
-                    } else {
-                        group.sendMessage("搜索不到词条($key)")
+                    if (key.isNotEmpty()) {
+                        val res = TreeSet<String>()
+                        res += QunDb.data.keys.filter { key in it }
+                        res += DefaultQunDb.data.keys.filter { key in it }
+                        if (res.isNotEmpty()) {
+                            val res1 = res.withIndex().map { (i, v) -> "${i + 1}. $v" }
+                            group.sendMessage(res1.joinToString(separator = "\n", prefix = "搜索到以下词条：\n"))
+                        } else {
+                            group.sendMessage("搜索不到词条($key)")
+                        }
                     }
                 } else {
                     val lastKey = addDbQQList.remove(sender.id)
