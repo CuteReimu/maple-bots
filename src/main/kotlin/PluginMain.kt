@@ -36,6 +36,7 @@ internal object PluginMain : KotlinPlugin(
         DefaultQunDb.reload()
         QunDb.reload()
         ImageCache.reload()
+        removeTimeoutImages()
 
         val addDbQQList = ConcurrentHashMap<Long, Pair<String, String>>()
 
@@ -237,5 +238,15 @@ internal object PluginMain : KotlinPlugin(
             m
         }
         return if (changed) l.toMessageChain() else ms
+    }
+
+    private fun removeTimeoutImages() {
+        val files = File("chat-images").list() ?: return
+        val fileSet = files.toMutableSet()
+        QunDb.data.forEach { (_, v) ->
+            val message = MessageChain.deserializeFromJsonString(v)
+            message.forEach { m -> (m as? Image)?.imageId?.also { fileSet -= it } }
+        }
+        fileSet.forEach { File("chat-images${File.separatorChar}$it").delete() }
     }
 }
