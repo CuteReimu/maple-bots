@@ -94,7 +94,14 @@ internal object PluginMain : KotlinPlugin(
                         res += DefaultQunDb.data.keys.filter { key in it }
                         if (res.isNotEmpty()) {
                             val res1 = res.withIndex().map { (i, v) -> "${i + 1}. $v" }
-                            group.sendMessage(res1.joinToString(separator = "\n", prefix = "搜索到以下词条：\n"))
+                            group.sendMessage(
+                                res1.joinToString(
+                                    separator = "\n",
+                                    prefix = "搜索到以下词条：\n",
+                                    limit = 10,
+                                    truncated = "等${res1.size}个词条"
+                                )
+                            )
                         } else {
                             group.sendMessage("搜索不到词条($key)")
                         }
