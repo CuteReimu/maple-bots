@@ -55,6 +55,30 @@ internal object PluginMain : KotlinPlugin(
                     group.sendMessage(At(sender) + "pong")
                 } else if (content == "roll") {
                     group.sendMessage("${sender.nameCardOrNick} roll: ${Random.nextInt(0, 100)}")
+                } else if (content.startsWith("模拟升星 ")) {
+                    runCatching {
+                        val itemLevel = content.substring(4).trim().toInt()
+                        val result = StarForce.doStuff(itemLevel, thirtyOff = false, fiveTenFifteen = false)
+                        group.sendMessage("模拟升星${itemLevel}级装备\n$result")
+                    }
+                } else if (content.startsWith("模拟升星必成活动 ")) {
+                    runCatching {
+                        val itemLevel = content.substring(8).trim().toInt()
+                        val result = StarForce.doStuff(itemLevel, thirtyOff = false, fiveTenFifteen = true)
+                        group.sendMessage("在5/10/15必成活动中模拟升星${itemLevel}级装备\n$result")
+                    }
+                } else if (content.startsWith("模拟升星七折活动 ")) {
+                    runCatching {
+                        val itemLevel = content.substring(8).trim().toInt()
+                        val result = StarForce.doStuff(itemLevel, thirtyOff = true, fiveTenFifteen = false)
+                        group.sendMessage("在七折活动中模拟升星${itemLevel}级装备\n$result")
+                    }
+                } else if (content.startsWith("模拟升星超必活动 ")) {
+                    runCatching {
+                        val itemLevel = content.substring(8).trim().toInt()
+                        val result = StarForce.doStuff(itemLevel, thirtyOff = true, fiveTenFifteen = true)
+                        group.sendMessage("在七折活动和5/10/15必成活动中模拟升星${itemLevel}级装备\n$result")
+                    }
                 } else if (content.startsWith("添加词条 ")) {
                     val key = content.substring(4).trim()
                     if (key.isNotEmpty()) {
