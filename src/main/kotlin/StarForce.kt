@@ -1,7 +1,9 @@
 package net.cutereimu.maplebots
 
 import net.mamoe.mirai.utils.MiraiLogger
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.pow
+import kotlin.math.roundToLong
 import kotlin.random.Random
 
 /**
@@ -123,12 +125,40 @@ object StarForce {
 
     fun doStuff(itemLevel: Int, thirtyOff: Boolean, fiveTenFifteen: Boolean): String {
         if (itemLevel < 5 || itemLevel > 300) throw Exception("装备等级不合理")
-        val (mesos17, booms17) = performExperiment(0, 17, itemLevel, thirtyOff, fiveTenFifteen)
-        val (mesos22, booms22) = performExperiment(0, 22, itemLevel, thirtyOff, fiveTenFifteen)
-        return "你总共花费了${mesos17.format()}金币，共爆炸了${booms17}次，终于升至17星\n" +
-                "你总共花费了${mesos22.format()}金币，共爆炸了${booms22}次，终于升至22星\n" +
-                "运气还行"
+        val now = System.currentTimeMillis()
+        val key = itemLevel or (if (thirtyOff) 0x1000 else 0) or (if (fiveTenFifteen) 0x2000 else 0)
+        val cacheData = cache[key]
+        val data =
+            if (cacheData != null && now < cacheData.expire) {
+                cacheData.data
+            } else {
+                var mesos17 = 0.0
+                var booms17 = 0.0
+                var mesos22 = 0.0
+                var booms22 = 0.0
+                repeat(100) {
+                    val (mesos171, booms171) = performExperiment(0, 17, itemLevel, thirtyOff, fiveTenFifteen)
+                    val (mesos221, booms221) = performExperiment(17, 22, itemLevel, thirtyOff, fiveTenFifteen)
+                    mesos17 += mesos171
+                    booms17 += booms171
+                    mesos22 += mesos221
+                    booms22 += booms221
+                }
+                val d =
+                    CacheData(now + 60000, doubleArrayOf(mesos17 / 100, booms17 / 100, mesos22 / 100, booms22 / 100))
+                cache[key] = d
+                d.data
+            }
+        return "共测试了100次\n0-17星，平均花费了${data[0].roundToLong().format()}金币，平均爆炸了${data[1]}次\n" +
+                "17-22星，平均花费了${data[2].roundToLong().format()}金币，平均爆炸了${data[3]}次\n"
     }
+
+    /**
+     * @param data [doubleArrayOf](mesos17, booms17, mesos22, booms22)
+     */
+    private class CacheData(val expire: Long, val data: DoubleArray)
+
+    private val cache = ConcurrentHashMap<Int, CacheData>()
 
     private const val SUCCESS = 0
     private const val MAINTAIN = 1
