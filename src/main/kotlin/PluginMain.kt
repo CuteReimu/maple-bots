@@ -79,6 +79,8 @@ internal object PluginMain : KotlinPlugin(
                         val result = StarForce.doStuff(itemLevel, thirtyOff = true, fiveTenFifteen = true)
                         group.sendMessage("在七折活动和5/10/15必成活动中模拟升星${itemLevel}级装备\n$result")
                     }
+                } else if (content.startsWith("洗魔方 ")) {
+                    Cube.doStuff(content.substring(3).trim())?.let { group.sendMessage(it) }
                 } else if (content.startsWith("添加词条 ")) {
                     val key = content.substring(4).trim()
                     if (key.isNotEmpty()) {
