@@ -3,6 +3,7 @@ package net.cutereimu.maplebots
 import net.mamoe.mirai.utils.MiraiLogger
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 import kotlin.random.Random
 
@@ -72,7 +73,7 @@ object StarForce {
     }
 
     /**
-     * @return [Pair](totalMesos, totalBooms)
+     * @return [Pair](totalMesos, totalBooms, totalCount)
      */
     private fun performExperiment(
         currentStars: Int,
@@ -80,13 +81,15 @@ object StarForce {
         itemLevel: Int,
         thirtyOff: Boolean,
         fiveTenFifteen: Boolean
-    ): Pair<Long, Int> {
+    ): Triple<Long, Int, Int> {
         var currentStar = currentStars
         var totalMesos = 0L
         var totalBooms = 0
+        var totalCount = 0
         var decreaseCount = 0
         while (currentStar < desiredStar) {
             totalMesos += attemptCost(currentStar, itemLevel, thirtyOff)
+            totalCount++
             if (decreaseCount == 2) { // chance time
                 decreaseCount = 0
                 currentStar++
@@ -114,7 +117,7 @@ object StarForce {
                 }
             }
         }
-        return Pair(totalMesos, totalBooms)
+        return Triple(totalMesos, totalBooms, totalCount)
     }
 
     private fun Long.format(): String = when {
@@ -133,30 +136,43 @@ object StarForce {
                 cacheData.data
             } else {
                 var mesos17 = 0.0
-                var booms17 = 0.0
+                var booms17 = 0
+                var count17 = 0
                 var mesos22 = 0.0
-                var booms22 = 0.0
+                var booms22 = 0
+                var count22 = 0
                 repeat(100) {
-                    val (mesos171, booms171) = performExperiment(0, 17, itemLevel, thirtyOff, fiveTenFifteen)
-                    val (mesos221, booms221) = performExperiment(17, 22, itemLevel, thirtyOff, fiveTenFifteen)
+                    val (mesos171, booms171, count171) = performExperiment(0, 17, itemLevel, thirtyOff, fiveTenFifteen)
+                    val (mesos221, booms221, count221) = performExperiment(17, 22, itemLevel, thirtyOff, fiveTenFifteen)
                     mesos17 += mesos171
                     booms17 += booms171
+                    count17 += count171
                     mesos22 += mesos221
                     booms22 += booms221
+                    count22 += count221
                 }
-                val d =
-                    CacheData(now + 60000, doubleArrayOf(mesos17 / 100, booms17 / 100, mesos22 / 100, booms22 / 100))
+                val d = CacheData(
+                    now + 60000,
+                    arrayOf(
+                        (mesos17 / 100).roundToLong().format(),
+                        (booms17 / 100.0).toString(),
+                        (count17 / 100.0).roundToInt().toString(),
+                        (mesos22 / 100).roundToLong().format(),
+                        (booms22 / 100.0).toString(),
+                        (count22 / 100.0).roundToInt().toString(),
+                    )
+                )
                 cache[key] = d
                 d.data
             }
-        return "共测试了100次\n0-17星，平均花费了${data[0].roundToLong().format()}金币，平均爆炸了${data[1]}次\n" +
-                "17-22星，平均花费了${data[2].roundToLong().format()}金币，平均爆炸了${data[3]}次\n"
+        return ("共测试了100次\n0-17星，平均花费了%s金币，平均爆炸了%s次，平均点了%s次\n" +
+                "17-22星，平均花费了%s金币，平均炸了%s次，平均点了%s次").format(*data)
     }
 
     /**
      * @param data [doubleArrayOf](mesos17, booms17, mesos22, booms22)
      */
-    private class CacheData(val expire: Long, val data: DoubleArray)
+    private class CacheData(val expire: Long, val data: Array<String>)
 
     private val cache = ConcurrentHashMap<Int, CacheData>()
 
