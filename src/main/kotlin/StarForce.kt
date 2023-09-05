@@ -1,6 +1,7 @@
 package net.cutereimu.maplebots
 
 import net.mamoe.mirai.utils.MiraiLogger
+import java.util.*
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
@@ -125,39 +126,44 @@ object StarForce {
         else -> "%.2fB".format(this / 1000000000.0)
     }
 
-    fun doStuff(itemLevel: Int, thirtyOff: Boolean, fiveTenFifteen: Boolean): String {
+    private fun calculate(itemLevel: Int, thirtyOff: Boolean, fiveTenFifteen: Boolean): StarForceDb.CacheData {
         if (itemLevel < 5 || itemLevel > 300) throw Exception("装备等级不合理")
         val now = System.currentTimeMillis()
         val key = itemLevel or (if (thirtyOff) 0x1000 else 0) or (if (fiveTenFifteen) 0x2000 else 0)
         val cacheData = StarForceDb.data[key] ?: StarForceDb.CacheData(0, listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), 0)
-        val (data, count) =
-            if (now < cacheData.expire) {
-                cacheData.average() to cacheData.count
-            } else {
-                var mesos17 = cacheData.data[0]
-                var booms17 = cacheData.data[1]
-                var count17 = cacheData.data[2]
-                var mesos22 = cacheData.data[3]
-                var booms22 = cacheData.data[4]
-                var count22 = cacheData.data[5]
-                repeat(100) {
-                    val (mesos171, booms171, count171) = performExperiment(0, 17, itemLevel, thirtyOff, fiveTenFifteen)
-                    val (mesos221, booms221, count221) = performExperiment(17, 22, itemLevel, thirtyOff, fiveTenFifteen)
-                    mesos17 += mesos171
-                    booms17 += booms171
-                    count17 += count171
-                    mesos22 += mesos221
-                    booms22 += booms221
-                    count22 += count221
-                }
-                val d = StarForceDb.CacheData(
-                    now + 10000,
-                    listOf(mesos17, booms17, count17, mesos22, booms22, count22),
-                    cacheData.count + 100
-                )
-                StarForceDb.data += key to d
-                d.average() to d.count
+        return if (now < cacheData.expire) {
+            cacheData
+        } else {
+            var mesos17 = cacheData.data[0]
+            var booms17 = cacheData.data[1]
+            var count17 = cacheData.data[2]
+            var mesos22 = cacheData.data[3]
+            var booms22 = cacheData.data[4]
+            var count22 = cacheData.data[5]
+            repeat(100) {
+                val (mesos171, booms171, count171) = performExperiment(0, 17, itemLevel, thirtyOff, fiveTenFifteen)
+                val (mesos221, booms221, count221) = performExperiment(17, 22, itemLevel, thirtyOff, fiveTenFifteen)
+                mesos17 += mesos171
+                booms17 += booms171
+                count17 += count171
+                mesos22 += mesos221
+                booms22 += booms221
+                count22 += count221
             }
+            val d = StarForceDb.CacheData(
+                now + 10000,
+                listOf(mesos17, booms17, count17, mesos22, booms22, count22),
+                cacheData.count + 100
+            )
+            StarForceDb.data += key to d
+            d
+        }
+    }
+
+    fun doStuff(itemLevel: Int, thirtyOff: Boolean, fiveTenFifteen: Boolean): String {
+        val cacheData = calculate(itemLevel, thirtyOff, fiveTenFifteen)
+        val data = cacheData.average()
+        val count = cacheData.count
         val param = arrayOf(
             data[0].roundToLong().format(),
             data[1].roundToInt().toString(),
@@ -168,6 +174,16 @@ object StarForce {
         )
         return ("共测试了${count}次\n0-17星，平均花费了%s金币，平均爆炸了%s次，平均点了%s次\n" +
                 "17-22星，平均花费了%s金币，平均炸了%s次，平均点了%s次").format(*param)
+    }
+
+    fun autoDoStuff() {
+        Timer().schedule(object : TimerTask() {
+            override fun run() {
+                val r = Random.nextInt(16)
+                val itemLevel = (r and 3).let { if (it == 3) 200 else 140 + 10 * it }
+                calculate(itemLevel, r and 4 != 0, r and 8 != 0)
+            }
+        }, 60000, 60000)
     }
 
     private const val SUCCESS = 0

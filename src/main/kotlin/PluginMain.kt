@@ -38,6 +38,7 @@ internal object PluginMain : KotlinPlugin(
         ImageCache.reload()
         StarForceDb.reload()
         removeTimeoutImages()
+        StarForce.autoDoStuff()
 
         val addDbQQList = ConcurrentHashMap<Long, Pair<String, String>>()
 
