@@ -150,13 +150,13 @@ object StarForce {
                 booms22 += booms221
                 count22 += count221
             }
-            val d = StarForceDb.CacheData(
+            StarForceDb.CacheData(
                 now + 10000,
                 listOf(mesos17, booms17, count17, mesos22, booms22, count22),
                 cacheData.count + 100
-            )
-            StarForceDb.data += key to d
-            d
+            ).also {
+                StarForceDb.data += key to it
+            }
         }
     }
 
