@@ -1,7 +1,6 @@
 package net.cutereimu.maplebots
 
 import net.mamoe.mirai.utils.MiraiLogger
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
@@ -130,17 +129,17 @@ object StarForce {
         if (itemLevel < 5 || itemLevel > 300) throw Exception("装备等级不合理")
         val now = System.currentTimeMillis()
         val key = itemLevel or (if (thirtyOff) 0x1000 else 0) or (if (fiveTenFifteen) 0x2000 else 0)
-        val cacheData = cache[key]
-        val data =
-            if (cacheData != null && now < cacheData.expire) {
-                cacheData.data
+        val cacheData = StarForceDb.data[key] ?: StarForceDb.CacheData(0, listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), 0)
+        val (data, count) =
+            if (now < cacheData.expire) {
+                cacheData.average() to cacheData.count
             } else {
-                var mesos17 = 0.0
-                var booms17 = 0
-                var count17 = 0
-                var mesos22 = 0.0
-                var booms22 = 0
-                var count22 = 0
+                var mesos17 = cacheData.data[0]
+                var booms17 = cacheData.data[1]
+                var count17 = cacheData.data[2]
+                var mesos22 = cacheData.data[3]
+                var booms22 = cacheData.data[4]
+                var count22 = cacheData.data[5]
                 repeat(100) {
                     val (mesos171, booms171, count171) = performExperiment(0, 17, itemLevel, thirtyOff, fiveTenFifteen)
                     val (mesos221, booms221, count221) = performExperiment(17, 22, itemLevel, thirtyOff, fiveTenFifteen)
@@ -151,30 +150,25 @@ object StarForce {
                     booms22 += booms221
                     count22 += count221
                 }
-                val d = CacheData(
-                    now + 60000,
-                    arrayOf(
-                        (mesos17 / 100).roundToLong().format(),
-                        (booms17 / 100.0).toString(),
-                        (count17 / 100.0).roundToInt().toString(),
-                        (mesos22 / 100).roundToLong().format(),
-                        (booms22 / 100.0).toString(),
-                        (count22 / 100.0).roundToInt().toString(),
-                    )
+                val d = StarForceDb.CacheData(
+                    now + 10000,
+                    listOf(mesos17, booms17, count17, mesos22, booms22, count22),
+                    cacheData.count + 100
                 )
-                cache[key] = d
-                d.data
+                StarForceDb.data += key to d
+                d.average() to d.count
             }
-        return ("共测试了100次\n0-17星，平均花费了%s金币，平均爆炸了%s次，平均点了%s次\n" +
-                "17-22星，平均花费了%s金币，平均炸了%s次，平均点了%s次").format(*data)
+        val param = arrayOf(
+            data[0].roundToLong().format(),
+            data[1].roundToInt().toString(),
+            data[2].roundToInt().toString(),
+            data[3].roundToLong().format(),
+            data[4].roundToInt().toString(),
+            data[5].roundToInt().toString(),
+        )
+        return ("共测试了${count}次\n0-17星，平均花费了%s金币，平均爆炸了%s次，平均点了%s次\n" +
+                "17-22星，平均花费了%s金币，平均炸了%s次，平均点了%s次").format(*param)
     }
-
-    /**
-     * @param data [doubleArrayOf](mesos17, booms17, mesos22, booms22)
-     */
-    private class CacheData(val expire: Long, val data: Array<String>)
-
-    private val cache = ConcurrentHashMap<Int, CacheData>()
 
     private const val SUCCESS = 0
     private const val MAINTAIN = 1
