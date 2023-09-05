@@ -73,9 +73,15 @@ internal object PluginMain : KotlinPlugin(
                         val result = StarForce.doStuff(itemLevel, thirtyOff = true, fiveTenFifteen = false)
                         group.sendMessage("在七折活动中模拟升星${itemLevel}级装备\n$result")
                     }
-                } else if (content.startsWith("模拟升星超必活动 ")) {
+                } else if (content.startsWith("模拟升星超必活动 ") || content.startsWith("模拟升星超级必成 ")) {
                     runCatching {
                         val itemLevel = content.substring(8).trim().toInt()
+                        val result = StarForce.doStuff(itemLevel, thirtyOff = true, fiveTenFifteen = true)
+                        group.sendMessage("在七折活动和5/10/15必成活动中模拟升星${itemLevel}级装备\n$result")
+                    }
+                } else if (content.startsWith("模拟升星超级必成活动 ")) {
+                    runCatching {
+                        val itemLevel = content.substring(10).trim().toInt()
                         val result = StarForce.doStuff(itemLevel, thirtyOff = true, fiveTenFifteen = true)
                         group.sendMessage("在七折活动和5/10/15必成活动中模拟升星${itemLevel}级装备\n$result")
                     }
