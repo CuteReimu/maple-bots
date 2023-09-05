@@ -36,9 +36,7 @@ internal object PluginMain : KotlinPlugin(
         DefaultQunDb.reload()
         QunDb.reload()
         ImageCache.reload()
-        StarForceDb.reload()
         removeTimeoutImages()
-        StarForce.autoDoStuff()
 
         val addDbQQList = ConcurrentHashMap<Long, Pair<String, String>>()
 
@@ -60,32 +58,32 @@ internal object PluginMain : KotlinPlugin(
                 } else if (content.startsWith("模拟升星 ")) {
                     runCatching {
                         val itemLevel = content.substring(4).trim().toInt()
-                        val result = StarForce.doStuff(itemLevel, thirtyOff = false, fiveTenFifteen = false)
-                        group.sendMessage("模拟升星${itemLevel}级装备\n$result")
+                        val result = StarForce.doStuff(group, itemLevel, thirtyOff = false, fiveTenFifteen = false)
+                        group.sendMessage(result)
                     }
                 } else if (content.startsWith("模拟升星必成活动 ")) {
                     runCatching {
                         val itemLevel = content.substring(8).trim().toInt()
-                        val result = StarForce.doStuff(itemLevel, thirtyOff = false, fiveTenFifteen = true)
-                        group.sendMessage("在5/10/15必成活动中模拟升星${itemLevel}级装备\n$result")
+                        val result = StarForce.doStuff(group, itemLevel, thirtyOff = false, fiveTenFifteen = true)
+                        group.sendMessage(result)
                     }
                 } else if (content.startsWith("模拟升星七折活动 ")) {
                     runCatching {
                         val itemLevel = content.substring(8).trim().toInt()
-                        val result = StarForce.doStuff(itemLevel, thirtyOff = true, fiveTenFifteen = false)
-                        group.sendMessage("在七折活动中模拟升星${itemLevel}级装备\n$result")
+                        val result = StarForce.doStuff(group, itemLevel, thirtyOff = true, fiveTenFifteen = false)
+                        group.sendMessage(result)
                     }
                 } else if (content.startsWith("模拟升星超必活动 ") || content.startsWith("模拟升星超级必成 ")) {
                     runCatching {
                         val itemLevel = content.substring(8).trim().toInt()
-                        val result = StarForce.doStuff(itemLevel, thirtyOff = true, fiveTenFifteen = true)
-                        group.sendMessage("在七折活动和5/10/15必成活动中模拟升星${itemLevel}级装备\n$result")
+                        val result = StarForce.doStuff(group, itemLevel, thirtyOff = true, fiveTenFifteen = true)
+                        group.sendMessage(result)
                     }
                 } else if (content.startsWith("模拟升星超级必成活动 ")) {
                     runCatching {
                         val itemLevel = content.substring(10).trim().toInt()
-                        val result = StarForce.doStuff(itemLevel, thirtyOff = true, fiveTenFifteen = true)
-                        group.sendMessage("在七折活动和5/10/15必成活动中模拟升星${itemLevel}级装备\n$result")
+                        val result = StarForce.doStuff(group, itemLevel, thirtyOff = true, fiveTenFifteen = true)
+                        group.sendMessage(result)
                     }
                 } else if (content.startsWith("洗魔方 ")) {
                     Cube.doStuff(content.substring(3).trim())?.let { group.sendMessage(it) }

@@ -1,7 +1,19 @@
 package net.cutereimu.maplebots
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import net.mamoe.mirai.contact.Group
+import net.mamoe.mirai.message.data.Message
+import net.mamoe.mirai.message.data.PlainText
+import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import net.mamoe.mirai.utils.MiraiLogger
-import java.util.*
+import org.jfree.chart.ChartFactory
+import org.jfree.chart.plot.PlotOrientation
+import org.jfree.data.statistics.HistogramDataset
+import java.awt.Rectangle
+import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
+import javax.imageio.ImageIO
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
@@ -126,64 +138,66 @@ object StarForce {
         else -> "%.2fB".format(this / 1000000000.0)
     }
 
-    private fun calculate(itemLevel: Int, thirtyOff: Boolean, fiveTenFifteen: Boolean): StarForceDb.CacheData {
+    suspend fun doStuff(group: Group, itemLevel: Int, thirtyOff: Boolean, fiveTenFifteen: Boolean): Message {
         if (itemLevel < 5 || itemLevel > 300) throw Exception("装备等级不合理")
-        val now = System.currentTimeMillis()
-        val key = itemLevel or (if (thirtyOff) 0x1000 else 0) or (if (fiveTenFifteen) 0x2000 else 0)
-        val cacheData = StarForceDb.data[key] ?: StarForceDb.CacheData(0, listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), 0)
-        return if (now < cacheData.expire) {
-            cacheData
-        } else {
-            var mesos17 = cacheData.data[0]
-            var booms17 = cacheData.data[1]
-            var count17 = cacheData.data[2]
-            var mesos22 = cacheData.data[3]
-            var booms22 = cacheData.data[4]
-            var count22 = cacheData.data[5]
-            repeat(100) {
-                val (mesos171, booms171, count171) = performExperiment(0, 17, itemLevel, thirtyOff, fiveTenFifteen)
-                val (mesos221, booms221, count221) = performExperiment(17, 22, itemLevel, thirtyOff, fiveTenFifteen)
-                mesos17 += mesos171
-                booms17 += booms171
-                count17 += count171
-                mesos22 += mesos221
-                booms22 += booms221
-                count22 += count221
-            }
-            StarForceDb.CacheData(
-                now + 10000,
-                listOf(mesos17, booms17, count17, mesos22, booms22, count22),
-                cacheData.count + 100
-            ).also {
-                StarForceDb.data += key to it
-            }
+        var mesos17 = 0.0
+        var booms17 = 0
+        var count17 = 0
+        var mesos22 = 0.0
+        var booms22 = 0
+        var count22 = 0
+        val cost = ArrayList<Double>()
+        repeat(1000) {
+            val (mesos171, booms171, count171) = performExperiment(0, 17, itemLevel, thirtyOff, fiveTenFifteen)
+            val (mesos221, booms221, count221) = performExperiment(17, 22, itemLevel, thirtyOff, fiveTenFifteen)
+            mesos17 += mesos171
+            booms17 += booms171
+            count17 += count171
+            mesos22 += mesos221
+            booms22 += booms221
+            count22 += count221
+            cost.add(mesos221 / 1000000000.0)
         }
-    }
-
-    fun doStuff(itemLevel: Int, thirtyOff: Boolean, fiveTenFifteen: Boolean): String {
-        val cacheData = calculate(itemLevel, thirtyOff, fiveTenFifteen)
-        val data = cacheData.average()
-        val count = cacheData.count
-        val param = arrayOf(
-            data[0].roundToLong().format(),
-            data[1].roundToInt().toString(),
-            data[2].roundToInt().toString(),
-            data[3].roundToLong().format(),
-            data[4].roundToInt().toString(),
-            data[5].roundToInt().toString(),
+        val data = arrayOf(
+            (mesos17 / 1000).roundToLong().format(),
+            (booms17 / 1000.0).toString(),
+            (count17 / 1000.0).roundToInt().toString(),
+            (mesos22 / 1000).roundToLong().format(),
+            (booms22 / 1000.0).toString(),
+            (count22 / 1000.0).roundToInt().toString(),
         )
-        return ("共测试了${count}次\n0-17星，平均花费了%s金币，平均爆炸了%s次，平均点了%s次\n" +
-                "17-22星，平均花费了%s金币，平均炸了%s次，平均点了%s次").format(*param)
-    }
-
-    fun autoDoStuff() {
-        Timer().schedule(object : TimerTask() {
-            override fun run() {
-                val r = Random.nextInt(16)
-                val itemLevel = (r and 3).let { if (it == 3) 200 else 140 + 10 * it }
-                calculate(itemLevel, r and 4 != 0, r and 8 != 0)
+        val activity = ArrayList<String>()
+        if (thirtyOff) activity.add("七折活动")
+        if (fiveTenFifteen) activity.add("5/10/15必成活动")
+        val activityStr = if (activity.isEmpty()) "" else "在${activity.joinToString(separator = "和")}中"
+        val s = ("${activityStr}模拟升星${itemLevel}级装备\n共测试了1000次\n" +
+                "0-17星，平均花费了%s金币，平均爆炸了%s次，平均点了%s次\n" +
+                "17-22星，平均花费了%s金币，平均炸了%s次，平均点了%s次").format(*data)
+        val dataset = HistogramDataset()
+        val max = mesos22 / 1000 / 1000000000.0 * 3
+        dataset.addSeries("", cost.filter { it < max }.toDoubleArray(), 40, cost.min(), max)
+        val chart = ChartFactory.createHistogram(
+            "",
+            "17 to 22 Mesos cost(B)",
+            "",
+            dataset,
+            PlotOrientation.VERTICAL,
+            false,
+            false,
+            false
+        )
+        val img = BufferedImage(480, 360, BufferedImage.TYPE_INT_RGB)
+        chart.draw(img.createGraphics(), Rectangle(480, 360))
+        val image = runCatching {
+            val buf = ByteArrayOutputStream()
+            withContext(Dispatchers.IO) {
+                ImageIO.write(img, "png", buf)
             }
-        }, 60000, 60000)
+            buf.toByteArray().toExternalResource().use {
+                group.uploadImage(it)
+            }
+        }.getOrNull()
+        return if (image == null) PlainText(s) else PlainText("$s\n花费分布直方图：\n") + image
     }
 
     private const val SUCCESS = 0
