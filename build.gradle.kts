@@ -15,7 +15,7 @@ repositories {
 
 dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
-    implementation("org.jfree:jfreechart:1.0.19")
+    implementation("org.jfree:jfreechart:1.5.4")
 }
 
 mirai {
