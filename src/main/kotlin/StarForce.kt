@@ -73,7 +73,7 @@ object StarForce {
         var probabilityMaintain = rates[currentStar][MAINTAIN]
         var probabilityDecrease = rates[currentStar][DECREASE]
         var probabilityBoom = rates[currentStar][BOOM]
-        if (boomProtect) { // boom protection enabled
+        if (boomProtect && currentStar <= 16) { // boom protection enabled
             probabilityDecrease += probabilityBoom
             probabilityBoom = 0.0
         }
