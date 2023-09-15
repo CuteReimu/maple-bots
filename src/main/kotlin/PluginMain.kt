@@ -55,31 +55,43 @@ internal object PluginMain : KotlinPlugin(
                     group.sendMessage(At(sender) + "pong")
                 } else if (content == "roll") {
                     group.sendMessage("${sender.nameCardOrNick} roll: ${Random.nextInt(0, 100)}")
-                } else if (content.startsWith("模拟升星 ")) {
+                } else if (content.startsWith("模拟升星 ") || content.startsWith("模拟上星 ")
+                    || content.startsWith("升星期望 ") || content.startsWith("上星期望 ")
+                ) {
                     runCatching {
                         val itemLevel = content.substring(4).trim().toInt()
                         val result = StarForce.doStuff(group, itemLevel, thirtyOff = false, fiveTenFifteen = false)
                         group.sendMessage(result)
                     }
-                } else if (content.startsWith("模拟升星必成活动 ")) {
+                } else if (content.startsWith("模拟升星必成活动 ") || content.startsWith("模拟上星必成活动 ")
+                    || content.startsWith("升星期望必成活动 ") || content.startsWith("上星期望必成活动 ")
+                ) {
                     runCatching {
                         val itemLevel = content.substring(8).trim().toInt()
                         val result = StarForce.doStuff(group, itemLevel, thirtyOff = false, fiveTenFifteen = true)
                         group.sendMessage(result)
                     }
-                } else if (content.startsWith("模拟升星七折活动 ")) {
+                } else if (content.startsWith("模拟升星七折活动 ") || content.startsWith("模拟上星七折活动 ")
+                    || content.startsWith("升星期望七折活动 ") || content.startsWith("上星期望七折活动 ")
+                ) {
                     runCatching {
                         val itemLevel = content.substring(8).trim().toInt()
                         val result = StarForce.doStuff(group, itemLevel, thirtyOff = true, fiveTenFifteen = false)
                         group.sendMessage(result)
                     }
-                } else if (content.startsWith("模拟升星超必活动 ") || content.startsWith("模拟升星超级必成 ")) {
+                } else if (content.startsWith("模拟升星超必活动 ") || content.startsWith("模拟升星超级必成 ")
+                    || content.startsWith("模拟上星超必活动 ") || content.startsWith("模拟上星超级必成 ")
+                    || content.startsWith("升星期望超必活动 ") || content.startsWith("升星期望超级必成 ")
+                    || content.startsWith("上星期望超必活动 ") || content.startsWith("上星期望超级必成 ")
+                ) {
                     runCatching {
                         val itemLevel = content.substring(8).trim().toInt()
                         val result = StarForce.doStuff(group, itemLevel, thirtyOff = true, fiveTenFifteen = true)
                         group.sendMessage(result)
                     }
-                } else if (content.startsWith("模拟升星超级必成活动 ")) {
+                } else if (content.startsWith("模拟升星超级必成活动 ") || content.startsWith("模拟上星超级必成活动 ")
+                    || content.startsWith("升星期望超级必成活动 ") || content.startsWith("上星期望超级必成活动 ")
+                ) {
                     runCatching {
                         val itemLevel = content.substring(10).trim().toInt()
                         val result = StarForce.doStuff(group, itemLevel, thirtyOff = true, fiveTenFifteen = true)
