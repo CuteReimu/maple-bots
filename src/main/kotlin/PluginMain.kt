@@ -58,24 +58,21 @@ internal object PluginMain : KotlinPlugin(
                 } else if (content.startsWith("模拟升星 ") || content.startsWith("模拟上星 ")
                     || content.startsWith("升星期望 ") || content.startsWith("上星期望 ")
                 ) {
-                    runCatching {
-                        val itemLevel = content.substring(4).trim().toInt()
+                    runCatching { content.substring(4).trim().toInt() }.getOrNull()?.let { itemLevel ->
                         val result = StarForce.doStuff(group, itemLevel, thirtyOff = false, fiveTenFifteen = false)
                         group.sendMessage(result)
                     }
                 } else if (content.startsWith("模拟升星必成活动 ") || content.startsWith("模拟上星必成活动 ")
                     || content.startsWith("升星期望必成活动 ") || content.startsWith("上星期望必成活动 ")
                 ) {
-                    runCatching {
-                        val itemLevel = content.substring(8).trim().toInt()
+                    runCatching { content.substring(8).trim().toInt() }.getOrNull()?.let { itemLevel ->
                         val result = StarForce.doStuff(group, itemLevel, thirtyOff = false, fiveTenFifteen = true)
                         group.sendMessage(result)
                     }
                 } else if (content.startsWith("模拟升星七折活动 ") || content.startsWith("模拟上星七折活动 ")
                     || content.startsWith("升星期望七折活动 ") || content.startsWith("上星期望七折活动 ")
                 ) {
-                    runCatching {
-                        val itemLevel = content.substring(8).trim().toInt()
+                    runCatching { content.substring(8).trim().toInt() }.getOrNull()?.let { itemLevel ->
                         val result = StarForce.doStuff(group, itemLevel, thirtyOff = true, fiveTenFifteen = false)
                         group.sendMessage(result)
                     }
@@ -84,16 +81,14 @@ internal object PluginMain : KotlinPlugin(
                     || content.startsWith("升星期望超必活动 ") || content.startsWith("升星期望超级必成 ")
                     || content.startsWith("上星期望超必活动 ") || content.startsWith("上星期望超级必成 ")
                 ) {
-                    runCatching {
-                        val itemLevel = content.substring(8).trim().toInt()
+                    runCatching { content.substring(8).trim().toInt() }.getOrNull()?.let { itemLevel ->
                         val result = StarForce.doStuff(group, itemLevel, thirtyOff = true, fiveTenFifteen = true)
                         group.sendMessage(result)
                     }
                 } else if (content.startsWith("模拟升星超级必成活动 ") || content.startsWith("模拟上星超级必成活动 ")
                     || content.startsWith("升星期望超级必成活动 ") || content.startsWith("上星期望超级必成活动 ")
                 ) {
-                    runCatching {
-                        val itemLevel = content.substring(10).trim().toInt()
+                    runCatching { content.substring(10).trim().toInt() }.getOrNull()?.let { itemLevel ->
                         val result = StarForce.doStuff(group, itemLevel, thirtyOff = true, fiveTenFifteen = true)
                         group.sendMessage(result)
                     }

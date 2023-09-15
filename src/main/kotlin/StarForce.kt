@@ -193,7 +193,7 @@ object StarForce {
                 (if (maxStar > 17) "0-17星，平均花费了%s金币，平均爆炸了%s次，平均点了%s次\n" else "") +
                 "$cur-${des}星，平均花费了%s金币，平均炸了%s次，平均点了%s次").format(*data)
         val dataset = HistogramDataset()
-        val max = mesos22 / 1000 / 1000000000.0 * 3
+        val max = mesos22 / 1000 / (if (exp == "M") 1000000.0 else 1000000000.0) * 3
         dataset.addSeries("", cost.filter { it < max }.toDoubleArray(), 40, cost.min(), max)
         val chart = ChartFactory.createHistogram(
             "",
