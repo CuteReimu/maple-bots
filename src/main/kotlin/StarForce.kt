@@ -45,16 +45,27 @@ object StarForce {
 
     private fun saviorCost(currentStart: Int, itemLevel: Int) = saviorMesoFn(currentStart)(currentStart, itemLevel)
 
-    private fun attemptCost(currentStart: Int, itemLevel: Int, thirtyOff: Boolean): Long {
-        val cost = saviorCost(currentStart, itemLevel)
-        if (thirtyOff) return cost * 7 / 10
-        return cost
+    private fun attemptCost(
+        currentStar: Int,
+        itemLevel: Int,
+        boomProtect: Boolean,
+        thirtyOff: Boolean,
+        fiveTenFifteen: Boolean,
+        chanceTime: Boolean
+    ): Long {
+        var multiplier = 1.0
+        if (boomProtect && !(fiveTenFifteen && currentStar == 15) && !chanceTime && currentStar in 15..16)
+            multiplier += 1.0
+        if (thirtyOff)
+            multiplier -= 0.3
+        val cost = saviorCost(currentStar, itemLevel) * multiplier
+        return cost.roundToLong()
     }
 
     /**
      * @return either [SUCCESS], [MAINTAIN], [DECREASE], or [BOOM]
      */
-    private fun determineOutcome(currentStar: Int, fiveTenFifteen: Boolean): Int {
+    private fun determineOutcome(currentStar: Int, boomProtect: Boolean, fiveTenFifteen: Boolean): Int {
         if (fiveTenFifteen && (currentStar == 5 || currentStar == 10 || currentStar == 15))
             return SUCCESS
         val outcome = Random.nextDouble()
@@ -62,6 +73,10 @@ object StarForce {
         var probabilityMaintain = rates[currentStar][MAINTAIN]
         var probabilityDecrease = rates[currentStar][DECREASE]
         var probabilityBoom = rates[currentStar][BOOM]
+        if (boomProtect) { // boom protection enabled
+            probabilityDecrease += probabilityBoom
+            probabilityBoom = 0.0
+        }
         // star catch adjustment
         probabilitySuccess *= 1.045
         val leftOver = 1 - probabilitySuccess
@@ -91,6 +106,7 @@ object StarForce {
         currentStars: Int,
         desiredStar: Int,
         itemLevel: Int,
+        boomProtect: Boolean,
         thirtyOff: Boolean,
         fiveTenFifteen: Boolean
     ): Triple<Long, Int, Int> {
@@ -100,13 +116,14 @@ object StarForce {
         var totalCount = 0
         var decreaseCount = 0
         while (currentStar < desiredStar) {
-            totalMesos += attemptCost(currentStar, itemLevel, thirtyOff)
+            val chanceTime = decreaseCount == 2
+            totalMesos += attemptCost(currentStar, itemLevel, boomProtect, thirtyOff, fiveTenFifteen, chanceTime)
             totalCount++
-            if (decreaseCount == 2) { // chance time
+            if (chanceTime) {
                 decreaseCount = 0
                 currentStar++
             } else {
-                when (determineOutcome(currentStar, fiveTenFifteen)) {
+                when (determineOutcome(currentStar, boomProtect, fiveTenFifteen)) {
                     SUCCESS -> {
                         decreaseCount = 0
                         currentStar++
@@ -155,6 +172,7 @@ object StarForce {
         }
         val cur = if (maxStar > 17) 17 else 0
         val des = maxStar.coerceAtMost(22)
+        val boomProtect = itemLevel >= 160
         var mesos17 = 0.0
         var booms17 = 0
         var count17 = 0
@@ -164,16 +182,16 @@ object StarForce {
         val cost = ArrayList<Double>()
         repeat(1000) {
             if (maxStar > 17) {
-                val (mesos171, booms171, count171) = performExperiment(0, 17, itemLevel, thirtyOff, fiveTenFifteen)
-                mesos17 += mesos171
-                booms17 += booms171
-                count17 += count171
+                val (m17, b17, c17) = performExperiment(0, 17, itemLevel, boomProtect, thirtyOff, fiveTenFifteen)
+                mesos17 += m17
+                booms17 += b17
+                count17 += c17
             }
-            val (mesos221, booms221, count221) = performExperiment(cur, des, itemLevel, thirtyOff, fiveTenFifteen)
-            mesos22 += mesos221
-            booms22 += booms221
-            count22 += count221
-            cost.add(mesos221 / divisor)
+            val (m22, b22, c22) = performExperiment(cur, des, itemLevel, boomProtect, thirtyOff, fiveTenFifteen)
+            mesos22 += m22
+            booms22 += b22
+            count22 += c22
+            cost.add(m22 / divisor)
         }
         var data = arrayOf(
             (mesos22 / 1000).roundToLong().format(),
@@ -192,7 +210,9 @@ object StarForce {
         if (thirtyOff) activity.add("七折活动")
         if (fiveTenFifteen) activity.add("5/10/15必成活动")
         val activityStr = if (activity.isEmpty()) "" else "在${activity.joinToString(separator = "和")}中"
-        val s = ("${activityStr}模拟升星${itemLevel}级装备\n共测试了1000次\n" +
+        val s = ("${activityStr}模拟升星${itemLevel}级装备" +
+                (if (boomProtect) "（点保护）" else "") +
+                "\n共测试了1000次\n" +
                 (if (maxStar > 17) "0-17星，平均花费了%s金币，平均爆炸了%s次，平均点了%s次\n" else "") +
                 "$cur-${des}星，平均花费了%s金币，平均炸了%s次，平均点了%s次").format(*data)
         val dataset = HistogramDataset()
