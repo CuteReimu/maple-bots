@@ -140,6 +140,17 @@ object StarForce {
 
     suspend fun doStuff(group: Group, itemLevel: Int, thirtyOff: Boolean, fiveTenFifteen: Boolean): Message {
         if (itemLevel < 5 || itemLevel > 300) throw Exception("装备等级不合理")
+        val maxStar = when {
+            itemLevel < 100 -> 5
+            itemLevel < 110 -> 8
+            itemLevel < 120 -> 10
+            itemLevel < 130 -> 15
+            itemLevel < 140 -> 20
+            else -> 25
+        }
+        val exp = if (maxStar <= 10) "M" else "B"
+        val cur = if (maxStar > 17) 17 else 0
+        val des = maxStar.coerceAtMost(22)
         var mesos17 = 0.0
         var booms17 = 0
         var count17 = 0
@@ -148,37 +159,45 @@ object StarForce {
         var count22 = 0
         val cost = ArrayList<Double>()
         repeat(1000) {
-            val (mesos171, booms171, count171) = performExperiment(0, 17, itemLevel, thirtyOff, fiveTenFifteen)
-            val (mesos221, booms221, count221) = performExperiment(17, 22, itemLevel, thirtyOff, fiveTenFifteen)
-            mesos17 += mesos171
-            booms17 += booms171
-            count17 += count171
+            if (maxStar > 17) {
+                val (mesos171, booms171, count171) = performExperiment(0, 17, itemLevel, thirtyOff, fiveTenFifteen)
+                mesos17 += mesos171
+                booms17 += booms171
+                count17 += count171
+            }
+            val (mesos221, booms221, count221) = performExperiment(cur, des, itemLevel, thirtyOff, fiveTenFifteen)
             mesos22 += mesos221
             booms22 += booms221
             count22 += count221
-            cost.add(mesos221 / 1000000000.0)
+            if (exp == "M") cost.add(mesos221 / 1000000.0)
+            else cost.add(mesos221 / 1000000000.0)
         }
-        val data = arrayOf(
-            (mesos17 / 1000).roundToLong().format(),
-            (booms17 / 1000.0).toString(),
-            (count17 / 1000.0).roundToInt().toString(),
+        var data = arrayOf(
             (mesos22 / 1000).roundToLong().format(),
             (booms22 / 1000.0).toString(),
             (count22 / 1000.0).roundToInt().toString(),
         )
+        if (maxStar > 17) {
+            data = arrayOf(
+                (mesos17 / 1000).roundToLong().format(),
+                (booms17 / 1000.0).toString(),
+                (count17 / 1000.0).roundToInt().toString(),
+                *data
+            )
+        }
         val activity = ArrayList<String>()
         if (thirtyOff) activity.add("七折活动")
         if (fiveTenFifteen) activity.add("5/10/15必成活动")
         val activityStr = if (activity.isEmpty()) "" else "在${activity.joinToString(separator = "和")}中"
         val s = ("${activityStr}模拟升星${itemLevel}级装备\n共测试了1000次\n" +
-                "0-17星，平均花费了%s金币，平均爆炸了%s次，平均点了%s次\n" +
-                "17-22星，平均花费了%s金币，平均炸了%s次，平均点了%s次").format(*data)
+                (if (maxStar > 17) "0-17星，平均花费了%s金币，平均爆炸了%s次，平均点了%s次\n" else "") +
+                "$cur-${des}星，平均花费了%s金币，平均炸了%s次，平均点了%s次").format(*data)
         val dataset = HistogramDataset()
         val max = mesos22 / 1000 / 1000000000.0 * 3
         dataset.addSeries("", cost.filter { it < max }.toDoubleArray(), 40, cost.min(), max)
         val chart = ChartFactory.createHistogram(
             "",
-            "17 to 22 Mesos cost(B)",
+            "$cur to $des Mesos cost($exp)",
             "",
             dataset,
             PlotOrientation.VERTICAL,
