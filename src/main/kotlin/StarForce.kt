@@ -148,7 +148,11 @@ object StarForce {
             itemLevel < 140 -> 20
             else -> 25
         }
-        val exp = if (maxStar <= 10) "M" else "B"
+        val (exp, divisor) = when {
+            maxStar <= 5 -> "" to 1.0
+            maxStar <= 10 -> "(M)" to 1000000.0
+            else -> "(B)" to 1000000000.0
+        }
         val cur = if (maxStar > 17) 17 else 0
         val des = maxStar.coerceAtMost(22)
         var mesos17 = 0.0
@@ -169,8 +173,7 @@ object StarForce {
             mesos22 += mesos221
             booms22 += booms221
             count22 += count221
-            if (exp == "M") cost.add(mesos221 / 1000000.0)
-            else cost.add(mesos221 / 1000000000.0)
+            cost.add(mesos221 / divisor)
         }
         var data = arrayOf(
             (mesos22 / 1000).roundToLong().format(),
@@ -193,11 +196,11 @@ object StarForce {
                 (if (maxStar > 17) "0-17星，平均花费了%s金币，平均爆炸了%s次，平均点了%s次\n" else "") +
                 "$cur-${des}星，平均花费了%s金币，平均炸了%s次，平均点了%s次").format(*data)
         val dataset = HistogramDataset()
-        val max = mesos22 / 1000 / (if (exp == "M") 1000000.0 else 1000000000.0) * 3
+        val max = (mesos22 / 1000 / divisor * 3).coerceAtMost(cost.max())
         dataset.addSeries("", cost.filter { it < max }.toDoubleArray(), 40, cost.min(), max)
         val chart = ChartFactory.createHistogram(
             "",
-            "$cur to $des Mesos cost($exp)",
+            "$cur to $des Mesos cost$exp",
             "",
             dataset,
             PlotOrientation.VERTICAL,
