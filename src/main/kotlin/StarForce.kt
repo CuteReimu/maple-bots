@@ -43,7 +43,7 @@ object StarForce {
         else -> preSaviorMesoFn(currentStar)
     }
 
-    private fun saviorCost(currentStart: Int, itemLevel: Int) = saviorMesoFn(currentStart)(currentStart, itemLevel)
+    private fun saviorCost(currentStar: Int, itemLevel: Int) = saviorMesoFn(currentStar)(currentStar, itemLevel)
 
     private fun attemptCost(
         currentStar: Int,
@@ -155,6 +155,75 @@ object StarForce {
         else -> "%.2fB".format(this / 1000000000.0)
     }
 
+    suspend fun doStuff(group: Group, content: String): Message? {
+        val arr = content.split(" ")
+        if (arr.size < 3) return null
+        val itemLevel = runCatching { arr[0].toInt() }.getOrNull() ?: return null
+        if (itemLevel < 5 || itemLevel > 300) throw Exception("装备等级不合理")
+        val cur = runCatching { arr[1].toInt() }.getOrNull() ?: return null
+        if (cur < 0) throw Exception("当前星数不合理")
+        val des = runCatching { arr[2].toInt() }.getOrNull() ?: return null
+        if (des > 22) return PlainText("最多测试到22星")
+        if (des <= cur) throw Exception("目标星数必须大于当前星数")
+        val boomProtect = "保护" in content
+        val thirtyOff = "七折" in content || "超必" in content
+        val fiveTenFifteen = "必成" in content || "超必" in content
+        val (exp, divisor) = when {
+            des <= 5 -> "" to 1.0
+            des <= 10 -> "(M)" to 1000000.0
+            else -> "(B)" to 1000000000.0
+        }
+        var mesos = 0.0
+        var booms = 0
+        var count = 0
+        val cost = ArrayList<Double>()
+        repeat(1000) {
+            val (m, b, c) = performExperiment(cur, des, itemLevel, boomProtect, thirtyOff, fiveTenFifteen)
+            mesos += m
+            booms += b
+            count += c
+            cost.add(m / divisor)
+        }
+        val data = arrayOf(
+            (mesos / 1000).roundToLong().format(),
+            (booms / 1000.0).toString(),
+            (count / 1000.0).roundToInt().toString(),
+        )
+        val activity = ArrayList<String>()
+        if (thirtyOff) activity.add("七折活动")
+        if (fiveTenFifteen) activity.add("5/10/15必成活动")
+        val activityStr = if (activity.isEmpty()) "" else "在${activity.joinToString(separator = "和")}中"
+        val s = ("${activityStr}模拟升星${itemLevel}级装备" +
+                (if (boomProtect) "（点保护）" else "") +
+                "\n共测试了1000次\n" +
+                "$cur-${des}星，平均花费了%s金币，平均炸了%s次，平均点了%s次").format(*data)
+        val dataset = HistogramDataset()
+        val max = (mesos / 1000 / divisor * 3).coerceAtMost(cost.max())
+        dataset.addSeries("", cost.filter { it < max }.toDoubleArray(), 40, cost.min(), max)
+        val chart = ChartFactory.createHistogram(
+            "",
+            "$cur to $des Mesos cost$exp",
+            "",
+            dataset,
+            PlotOrientation.VERTICAL,
+            false,
+            false,
+            false
+        )
+        val img = BufferedImage(480, 360, BufferedImage.TYPE_INT_RGB)
+        chart.draw(img.createGraphics(), Rectangle(480, 360))
+        val image = runCatching {
+            val buf = ByteArrayOutputStream()
+            withContext(Dispatchers.IO) {
+                ImageIO.write(img, "png", buf)
+            }
+            buf.toByteArray().toExternalResource().use {
+                group.uploadImage(it)
+            }
+        }.getOrNull()
+        return if (image == null) PlainText(s) else PlainText("$s\n花费分布直方图：\n") + image
+    }
+
     suspend fun doStuff(group: Group, itemLevel: Int, thirtyOff: Boolean, fiveTenFifteen: Boolean): Message {
         if (itemLevel < 5 || itemLevel > 300) throw Exception("装备等级不合理")
         val maxStar = when {
@@ -167,7 +236,7 @@ object StarForce {
         }
         val (exp, divisor) = when {
             maxStar <= 5 -> "" to 1.0
-            maxStar <= 10 -> "(M)" to 1000000.0
+            maxStar < 15 -> "(M)" to 1000000.0
             else -> "(B)" to 1000000000.0
         }
         val cur = if (maxStar > 17) 17 else 0

@@ -58,6 +58,9 @@ internal object PluginMain : KotlinPlugin(
                 } else if (content.startsWith("模拟升星 ") || content.startsWith("模拟上星 ")
                     || content.startsWith("升星期望 ") || content.startsWith("上星期望 ")
                 ) {
+                    StarForce.doStuff(group, content.substring(4).trim())?.let { result ->
+                        group.sendMessage(result)
+                    }
                     runCatching { content.substring(4).trim().toInt() }.getOrNull()?.let { itemLevel ->
                         val result = StarForce.doStuff(group, itemLevel, thirtyOff = false, fiveTenFifteen = false)
                         group.sendMessage(result)
