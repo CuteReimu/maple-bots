@@ -170,7 +170,7 @@ object StarForce {
         val fiveTenFifteen = "必成" in content || "超必" in content
         val (exp, divisor) = when {
             des <= 5 -> "" to 1.0
-            des <= 10 -> "(M)" to 1000000.0
+            des < 15 -> "(M)" to 1000000.0
             else -> "(B)" to 1000000000.0
         }
         var mesos = 0.0
@@ -236,7 +236,7 @@ object StarForce {
         }
         val (exp, divisor) = when {
             maxStar <= 5 -> "" to 1.0
-            maxStar < 15 -> "(M)" to 1000000.0
+            maxStar <= 10 -> "(M)" to 1000000.0
             else -> "(B)" to 1000000000.0
         }
         val cur = if (maxStar > 17) 17 else 0
