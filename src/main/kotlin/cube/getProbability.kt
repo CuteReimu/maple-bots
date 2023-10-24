@@ -20,25 +20,25 @@ import kotlinx.serialization.json.*
  */
 @Serializable
 internal class InputObject(
-    var percStat: Int = 0,
-    var lineStat: Int = 0,
-    var percAllStat: Int = 0,
-    var lineAllStat: Int = 0,
-    var percHp: Int = 0,
-    var lineHp: Int = 0,
-    var percAtt: Int = 0,
-    var lineAtt: Int = 0,
-    var percBoss: Int = 0,
-    var lineBoss: Int = 0,
-    var lineIed: Int = 0,
-    var lineCritDamage: Int = 0,
-    var lineMeso: Int = 0,
-    var lineDrop: Int = 0,
-    var lineMesoOrDrop: Int = 0,
-    var secCooldown: Int = 0,
-    var lineAutoSteal: Int = 0,
-    var lineAttOrBoss: Int = 0,
-    var lineAttOrBossOrIed: Int = 0,
+    private var percStat: Int = 0,
+    private var lineStat: Int = 0,
+    private var percAllStat: Int = 0,
+    private var lineAllStat: Int = 0,
+    private var percHp: Int = 0,
+    private var lineHp: Int = 0,
+    private var percAtt: Int = 0,
+    private var lineAtt: Int = 0,
+    private var percBoss: Int = 0,
+    private var lineBoss: Int = 0,
+    private var lineIed: Int = 0,
+    private var lineCritDamage: Int = 0,
+    private var lineMeso: Int = 0,
+    private var lineDrop: Int = 0,
+    private var lineMesoOrDrop: Int = 0,
+    private var secCooldown: Int = 0,
+    private var lineAutoSteal: Int = 0,
+    private var lineAttOrBoss: Int = 0,
+    private var lineAttOrBossOrIed: Int = 0,
 ) {
     operator fun get(propertyName: String): Int = when (propertyName) {
         "percStat" -> percStat
@@ -127,7 +127,7 @@ internal fun getProbability(
 
     // convert parts of input for easier mapping to keys in cubeRates
 
-    val tier = Tier.forNumber(desiredTier).name
+    val tier = Tier.forNumber(desiredTier).tierName
     val itemLabel = when (itemType) {
         "accessory" -> "ring"
         "badge" -> "heart"
@@ -135,14 +135,14 @@ internal fun getProbability(
     }
 
     // get the cubing data for this input criteria from cubeRates (which is based on json data)
-    val raw_cubeData = Triple(
+    val rawCubedata = Triple(
         cubeRates.jsonObject["lvl120to200"]!!.jsonObject[itemLabel]!!.jsonObject[cubeType]!!.jsonObject[tier]!!.jsonObject["first_line"]!!.jsonArray,
         cubeRates.jsonObject["lvl120to200"]!!.jsonObject[itemLabel]!!.jsonObject[cubeType]!!.jsonObject[tier]!!.jsonObject["second_line"]!!.jsonArray,
         cubeRates.jsonObject["lvl120to200"]!!.jsonObject[itemLabel]!!.jsonObject[cubeType]!!.jsonObject[tier]!!.jsonObject["third_line"]!!.jsonArray
     )
 
     // make adjustments to stat values if needed (for items lvl 160 or above)
-    val cubeData = convertCubeDataForLevel(raw_cubeData, itemLevel)
+    val cubeData = convertCubeDataForLevel(rawCubedata, itemLevel)
 
     // generate consolidated version of cubing data that group any lines not relevant to the calculation into a single
     // Junk entry
@@ -156,10 +156,10 @@ internal fun getProbability(
 
     // loop through all possible outcomes for 1st, 2nd, and 3rd line using consolidated cube data
     // sum up the rate of outcomes that satisfied the input to determine final probability
-    var total_chance = 0.0
-    var total_count = 0
-    var count_useful = 0
-    var count_invalid = 0
+    var totalChance = 0.0
+    var totalCount = 0
+    var countUseful = 0
+    var countInvalid = 0
     logger.info("=== Generating all possible outcomes ===")
     for (line1 in consolidatedCubeData.first) {
         for (line2 in consolidatedCubeData.second) {
@@ -168,35 +168,35 @@ internal fun getProbability(
                 val outcome = listOf(line1, line2, line3)
                 if (satisfiesInput(outcome, probabilityInput)) {
                     // calculate chance of this outcome occurring
-                    logger.info("Outcome #${total_count + 1} matches input")
+                    logger.info("Outcome #${totalCount + 1} matches input")
                     val result = calculateRate(outcome, consolidatedCubeData)
-                    total_chance += result
+                    totalChance += result
 
                     if (result == 0.0) {
-                        count_invalid++
+                        countInvalid++
                     } else {
-                        count_useful++
+                        countUseful++
                     }
                 }
-                total_count++
+                totalCount++
             }
         }
     }
     logger.info("=== RESULTS ===")
-    logger.info("Total chance: $total_chance (without rounding: $total_chance)");
+    logger.info("Total chance: $totalChance (without rounding: $totalChance)")
 
-    return total_chance / 100.0
+    return totalChance / 100.0
 }
 
-internal enum class Tier {
-    rare, epic, unique, legendary;
+internal enum class Tier(val tierName: String) {
+    Rare("rare"), Epic("epic"), Unique("unique"), Legendary("legendary");
 
     companion object {
         fun forNumber(n: Int) = when (n) {
-            3 -> legendary
-            2 -> unique
-            1 -> epic
-            0 -> rare
+            3 -> Legendary
+            2 -> Unique
+            1 -> Epic
+            0 -> Rare
             else -> throw RuntimeException("unknown tier: $n")
         }
     }
@@ -242,17 +242,13 @@ private fun calculateRate(
      * reference: https://maplestory.nexon.com/Guide/OtherProbability/cube/strange
      */
     fun getAdjustedRate(currentLine: JsonArray, previousLines: List<JsonArray>, currentPool: List<JsonArray>): Double {
-        val current_category = currentLine[0].jsonPrimitive
-        val current_val =
-            if (current_category.isString && current_category.content == CATEGORY.JUNK)
-                JsonPrimitive("${currentLine[1].jsonArray.size} categories")
-            else currentLine[1]
-        val current_rate = currentLine[2].jsonPrimitive.double
-        val current_line = previousLines.size + 1
+        val currentCategory = currentLine[0].jsonPrimitive
+        val currentRate = currentLine[2].jsonPrimitive.double
+        val currentLineNum = previousLines.size + 1
 
         // the first line will never have its rates adjusted
         if (previousLines.isEmpty()) {
-            return current_rate
+            return currentRate
         }
 
         // determine special categories that we've reached the limit on in previous lines which need to be removed from
@@ -269,7 +265,7 @@ private fun calculateRate(
         // exit early with rate of 0 if this set of lines is not valid (exceeds max category count)
         for ((spCat, count) in prevSpecialLinesCount) {
             if (count > MAX_CATEGORY_COUNT[spCat]!! ||
-                current_category.isString && spCat == current_category.content && (count + 1) > MAX_CATEGORY_COUNT[spCat]!!
+                currentCategory.isString && spCat == currentCategory.content && (count + 1) > MAX_CATEGORY_COUNT[spCat]!!
             ) {
                 logger.info("Outcome is invalid. Exceeded count for $spCat.")
                 return 0.0
@@ -289,11 +285,11 @@ private fun calculateRate(
             if (cat.isString && cat.content in toBeRemoved) {
                 adjustedTotal -= rate
                 adjustedFlag = true
-                logger.info("Line $current_line: Removed [$cat: $`val`] from pool. new adjusted_total for this line is: $adjustedTotal")
+                logger.info("Line $currentLineNum: Removed [$cat: $`val`] from pool. new adjusted_total for this line is: $adjustedTotal")
             }
         }
 
-        return if (adjustedFlag) current_rate / adjustedTotal * 100 else current_rate
+        return if (adjustedFlag) currentRate / adjustedTotal * 100 else currentRate
     }
 
     val adjustedRates = listOf(
@@ -336,7 +332,7 @@ private fun getConsolidatedRates(ratesList: JsonArray, usefulCategories: List<St
         val `val` = item[1]
         val rate = item[2]
 
-        if (category.isString && category.content in usefulCategories && MAX_CATEGORY_COUNT.containsKey(category.content)) {
+        if (category.isString && category.content in usefulCategories || MAX_CATEGORY_COUNT.containsKey(category.content)) {
             consolidatedRates.add(item)
         } else if (category.isString && category.content == CATEGORY.JUNK) {
             // using concat here since "Junk" is already a category that exists in the json data.
@@ -365,7 +361,7 @@ private fun getUsefulCategories(probabilityInput: InputObject): List<String> {
     val usefulCategories = ArrayList<String>()
     for ((field, `val`) in INPUT_CATEGORY_MAP) {
         if (probabilityInput[field] > 0)
-            usefulCategories.addAll(INPUT_CATEGORY_MAP[field]!!)
+            usefulCategories.addAll(`val`)
     }
     return usefulCategories.toSet().toList()
 }
@@ -414,8 +410,8 @@ private fun convertCubeDataForLevel(
 /**
  * type of calculation can be total number of lines or a value sum (e.g. stat %, seconds of CDR)
  */
-private enum class CALC_TYPE {
-    LINE, VAL
+private enum class CalcType {
+    Line, Val
 }
 
 /**
@@ -440,20 +436,20 @@ private fun checkPercAllStat(outcome: List<JsonArray>, requiredVal: Int): Boolea
  * get the total number of lines or total value of a specific category in this outcome
  * calcType: specifies whether we are calculating number of lines or total value (defaults to lines if not specified)
  */
-private fun _calculateTotal(
+private fun calculateTotal(
     outcome: List<JsonArray>,
     desiredCategory: String,
-    calcType: CALC_TYPE = CALC_TYPE.LINE
+    calcType: CalcType = CalcType.Line
 ): Int {
     var actualVal = 0
     for (a in outcome) {
         val category = a[0].jsonPrimitive
         val `val` = a[1]
         if (category.isString && category.content == desiredCategory) {
-            if (calcType == CALC_TYPE.VAL)
+            if (calcType == CalcType.Val)
                 actualVal += `val`.jsonPrimitive.int
-            else if (calcType == CALC_TYPE.LINE)
-                actualVal += 1;
+            else if (calcType == CalcType.Line)
+                actualVal += 1
         }
     }
     return actualVal
@@ -465,68 +461,69 @@ private fun _calculateTotal(
  */
 private val OUTCOME_MATCH_FUNCTION_MAP: Map<String, (List<JsonArray>, Int) -> Boolean> = mapOf(
     "percStat" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.STR_PERC, CALC_TYPE.VAL) +
-                _calculateTotal(outcome, CATEGORY.ALLSTATS_PERC, CALC_TYPE.VAL) >= requiredVal
+        calculateTotal(outcome, CATEGORY.STR_PERC, CalcType.Val) +
+                calculateTotal(outcome, CATEGORY.ALLSTATS_PERC, CalcType.Val) >= requiredVal
     },
     "lineStat" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.STR_PERC) +
-                _calculateTotal(outcome, CATEGORY.ALLSTATS_PERC) >= requiredVal
+        calculateTotal(outcome, CATEGORY.STR_PERC) +
+                calculateTotal(outcome, CATEGORY.ALLSTATS_PERC) >= requiredVal
     },
     "percAllStat" to ::checkPercAllStat,
     "lineAllStat" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.ALLSTATS_PERC) >= requiredVal
+        calculateTotal(outcome, CATEGORY.ALLSTATS_PERC) >= requiredVal
     },
     "percHp" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.MAXHP_PERC, CALC_TYPE.VAL) >= requiredVal
+        calculateTotal(outcome, CATEGORY.MAXHP_PERC, CalcType.Val) >= requiredVal
     },
     "lineHp" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.MAXHP_PERC) >= requiredVal
+        calculateTotal(outcome, CATEGORY.MAXHP_PERC) >= requiredVal
     },
     "percAtt" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.ATT_PERC, CALC_TYPE.VAL) >= requiredVal
+        calculateTotal(outcome, CATEGORY.ATT_PERC, CalcType.Val) >= requiredVal
     },
     "lineAtt" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.ATT_PERC) >= requiredVal
+        calculateTotal(outcome, CATEGORY.ATT_PERC) >= requiredVal
     },
     "percBoss" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.BOSSDMG_PERC, CALC_TYPE.VAL) >= requiredVal
+        calculateTotal(outcome, CATEGORY.BOSSDMG_PERC, CalcType.Val) >= requiredVal
     },
     "lineBoss" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.BOSSDMG_PERC) >= requiredVal
+        calculateTotal(outcome, CATEGORY.BOSSDMG_PERC) >= requiredVal
     },
     "lineIed" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.IED_PERC) >= requiredVal
+        calculateTotal(outcome, CATEGORY.IED_PERC) >= requiredVal
     },
     "lineCritDamage" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.CRITDMG_PERC) >= requiredVal
+        calculateTotal(outcome, CATEGORY.CRITDMG_PERC) >= requiredVal
     },
     "lineMeso" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.MESO_PERC) >= requiredVal
+        calculateTotal(outcome, CATEGORY.MESO_PERC) >= requiredVal
     },
     "lineDrop" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.DROP_PERC) >= requiredVal
+        calculateTotal(outcome, CATEGORY.DROP_PERC) >= requiredVal
     },
     "lineMesoOrDrop" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.MESO_PERC) + _calculateTotal(outcome, CATEGORY.DROP_PERC) >= requiredVal
+        calculateTotal(outcome, CATEGORY.MESO_PERC) + calculateTotal(outcome, CATEGORY.DROP_PERC) >= requiredVal
     },
     "secCooldown" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.CDR_TIME, CALC_TYPE.VAL) >= requiredVal
+        calculateTotal(outcome, CATEGORY.CDR_TIME, CalcType.Val) >= requiredVal
     },
     "lineAutoSteal" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.AUTOSTEAL_PERC) >= requiredVal
+        calculateTotal(outcome, CATEGORY.AUTOSTEAL_PERC) >= requiredVal
     },
     "lineAttOrBoss" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.ATT_PERC) +
-                _calculateTotal(outcome, CATEGORY.BOSSDMG_PERC) >= requiredVal
+        calculateTotal(outcome, CATEGORY.ATT_PERC) +
+                calculateTotal(outcome, CATEGORY.BOSSDMG_PERC) >= requiredVal
     },
     "lineAttOrBossOrIed" to { outcome, requiredVal ->
-        _calculateTotal(outcome, CATEGORY.ATT_PERC) +
-                _calculateTotal(outcome, CATEGORY.BOSSDMG_PERC) +
-                _calculateTotal(outcome, CATEGORY.IED_PERC) >= requiredVal
+        calculateTotal(outcome, CATEGORY.ATT_PERC) +
+                calculateTotal(outcome, CATEGORY.BOSSDMG_PERC) +
+                calculateTotal(outcome, CATEGORY.IED_PERC) >= requiredVal
     },
 )
 
 /** labels for categories used in json data reference and calculations */
+@Suppress("UNUSED")
 private object CATEGORY {
     const val STR_PERC = "STR %"
     const val DEX_PERC = "DEX %"

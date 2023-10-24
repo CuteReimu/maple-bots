@@ -1,6 +1,82 @@
 package net.cutereimu.maplebots
 
 object Cube {
+    private val nameMap = mapOf(
+        "首饰" to ("accessory" to 150),
+        "腰带" to ("belt" to 150),
+        "副手" to ("secondary" to 140),
+        "上衣" to ("top" to 150),
+        "下衣" to ("bottom" to 150),
+        "披风" to ("cape" to 200),
+        "纹章" to ("emblem" to 100),
+        "手套" to ("gloves" to 200),
+        "帽子" to ("hat" to 150),
+        "心脏" to ("heart" to 100),
+        "套服" to ("overall" to 200),
+        "鞋子" to ("shoes" to 200),
+        "护肩" to ("shoulder" to 200),
+        "武器" to ("weapon" to 200),
+    )
+
+    private val statMap = mapOf(
+        "percStat" to { v: String -> "$v%+属性" },
+        "lineStat" to { v: String -> "${v}条属性" },
+        "percAtt" to { v: String -> "$v%+攻" },
+        "lineAtt" to { v: String -> "${v}条攻" },
+        "percBoss" to { v: String -> "$v%+BD" },
+        "lineBoss" to { v: String -> "${v}条BD" },
+        "lineIed" to { v: String -> "${v}条无视" },
+        "lineCritDamage" to { v: String -> "${v}条爆伤" },
+        "lineMeso" to { v: String -> "${v}条钱" },
+        "lineDrop" to { v: String -> "${v}条爆" },
+        "lineMesoOrDrop" to { v: String -> "${v}条钱爆" },
+        "secCooldown" to { v: String -> "${v}秒CD" },
+    )
+
+    private val defaultSelections = IntProgression.fromClosedRange(18, 36, 3).map { "percStat+$it" }
+    private val defaultSelections160 = defaultSelections + "percStat+39"
+    private val accessorySelections = defaultSelections + listOf(
+        "lineMeso+1", "lineDrop+1", "lineMesoOrDrop+1",
+        "lineMeso+2", "lineDrop+2", "lineMesoOrDrop+2",
+        "lineMeso+3", "lineMeso+1&lineStat+1", "lineDrop+1&lineStat+1", "lineMesoOrDrop+1&lineStat+1",
+    )
+    private val hatSelections = listOf(
+        defaultSelections,
+        (2..6).map { "secCooldown+$it" },
+        listOf("secCooldown+2&lineStat+2"),
+        (2..4).map { "secCooldown+$it&lineStat+1" },
+    ).flatten()
+    private val gloveSelections160 = listOf(
+        defaultSelections160,
+        (1..3).map { "lineCritDamage+$it" },
+        listOf("lineCritDamage+1&lineStat+1", "lineCritDamage+1&lineStat+2", "lineCritDamage+2&lineStat+1")
+    ).flatten()
+    private val wsSelections = listOf(
+        IntProgression.fromClosedRange(18, 36, 3).map { "percAtt+$it" },
+        IntProgression.fromClosedRange(18, 24, 3).map { "lineIed+1&percAtt+$it" },
+        listOf("lineAtt+1&lineBoss+1", "lineAtt+1&lineBoss+2", "lineAtt+2&lineBoss+1"),
+        IntProgression.fromClosedRange(30, 40, 5).map { "percAtt+21&percBoss+$it" },
+        listOf("percAtt+24&percBoss+30"),
+    ).flatten()
+    private val wsSelections160 = listOf(
+        IntProgression.fromClosedRange(18, 39, 3).map { "percAtt+$it" },
+        IntProgression.fromClosedRange(20, 26, 3).map { "lineIed+1&percAtt+$it" },
+        listOf("lineAtt+1&lineBoss+1", "lineAtt+1&lineBoss+2", "lineAtt+2&lineBoss+1"),
+        IntProgression.fromClosedRange(30, 40, 5).map { "percAtt+23&percBoss+$it" },
+        listOf("percAtt+26&percBoss+30"),
+    ).flatten()
+    private val eSelections = IntProgression.fromClosedRange(18, 36, 3).map { "percAtt+$it" } +
+            IntProgression.fromClosedRange(18, 24, 3).map { "lineIed+1&percAtt+$it" }
+
+    fun getSelection(name: String, itemLevel: Int) = when (name) {
+        "纹章" -> eSelections // 纹章没160以上的，先不管
+        "武器", "副手" -> if (itemLevel < 160) wsSelections else wsSelections160
+        "首饰" -> accessorySelections // 首饰现在只算150的，先不管
+        "帽子" -> hatSelections // 帽子现在只算150的，先不管
+        "手套" -> gloveSelections160 // 手套现在只算200的，先不管
+        else -> if (itemLevel < 160) defaultSelections else defaultSelections160
+    }
+
     fun doStuff(s: String) = data[s]?.let { (level, result) ->
         "以下是以${level}级${s}计算的理论结果：\n" + result.joinToString(separator = "\n") {
             val (color, cost) =

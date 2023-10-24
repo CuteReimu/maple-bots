@@ -13,7 +13,6 @@ internal val cubeRates = Cube.cubeRates
 internal val logger = Cube.logger
 
 private object Cube {
-
     val cubeRates = javaClass.getResourceAsStream("/cubeRates.js")!!.use { `is` ->
         json.parseToJsonElement(String(`is`.readAllBytes()).replaceFirst("const cubeRates = ", ""))
     }
@@ -31,13 +30,11 @@ fun runCalculator(
     desiredTier: Int,
     desiredStat: String
 ) {
-    val anyStats = desiredStat == "any";
+    val anyStats = desiredStat == "any"
     val probabilityInputObject = translateInputToObject(desiredStat)
     val p = if (anyStats) 1.0 else getProbability(desiredTier, probabilityInputObject, itemType, cubeType, itemLevel)
     val tierUp = getTierCosts(currentTier, desiredTier, cubeType)
-    var stats = geoDistrQuantile(p)
-    if (anyStats)
-        stats = Result(0, 0, 0, 0, 0)
+    val stats = if (anyStats) Result(0, 0, 0, 0, 0) else getDistrQuantile(p)
 
     val mean = stats.mean + tierUp.mean
     val median = stats.median + tierUp.median

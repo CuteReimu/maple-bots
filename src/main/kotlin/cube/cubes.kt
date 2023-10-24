@@ -18,8 +18,8 @@ internal fun getRevealCostConstant(itemLevel: Int): Double = when {
 }
 
 internal fun cubingCost(cubeType: String, itemLevel: Int, totalCubeCount: Long): Long {
-    val cubeCost = getCubeCost(cubeType);
-    val revealCostConst = getRevealCostConstant(itemLevel);
+    val cubeCost = getCubeCost(cubeType)
+    val revealCostConst = getRevealCostConstant(itemLevel)
     val revealPotentialCost = revealCostConst * itemLevel * itemLevel
     return (cubeCost * totalCubeCount + totalCubeCount * revealPotentialCost).roundToLong()
 }
@@ -32,7 +32,7 @@ internal fun getTierCosts(currentTier: Int, desireTier: Int, cubeType: String): 
     var ninetyFifth = 0L
     for (i in currentTier..<desireTier) {
         val p = tier_rates[cubeType]!![i]!!
-        val stats = geoDistrQuantile(p)
+        val stats = getDistrQuantile(p)
         mean += stats.mean
         median += stats.median
         seventyFifth += stats.seventyFifth
@@ -76,14 +76,6 @@ private val tier_rates = mapOf(
     )
 )
 
-internal val maxCubeTier = mapOf(
-    "occult" to 1,
-    "master" to 2,
-    "meister" to 3,
-    "red" to 3,
-    "black" to 3,
-)
-
 internal class Result(
     val mean: Long,
     val median: Long,
@@ -92,7 +84,7 @@ internal class Result(
     val ninetyFifth: Long
 )
 
-internal fun geoDistrQuantile(p: Double): Result {
+internal fun getDistrQuantile(p: Double): Result {
     val mean = 1 / p
     val median = ln(1 - 0.5) / ln(1 - p)
     val seventyFifth = ln(1 - 0.75) / ln(1 - p)
