@@ -117,8 +117,8 @@ object Cube {
         else -> "%.0fT".format(this / 1000000000000.0)
     }
 
-    val cubeRates = javaClass.getResourceAsStream("/cubeRates.js")!!.use { `is` ->
-        json.parseToJsonElement(String(`is`.readAllBytes()).replaceFirst("const cubeRates = ", ""))
+    private val cubeRates = javaClass.getResourceAsStream("/cubeRates.json")!!.use { `is` ->
+        json.parseToJsonElement(String(`is`.readAllBytes()))
     }
 
     private fun getCubeCost(cubeType: String): Long = when (cubeType) {
