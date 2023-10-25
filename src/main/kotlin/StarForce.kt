@@ -220,7 +220,10 @@ object StarForce {
             buf.toByteArray().toExternalResource().use {
                 group.uploadImage(it)
             }
-        }.getOrNull()
+        }.getOrElse {
+            logger.error(it)
+            null
+        }
         return if (image == null) PlainText(s) else PlainText("$s\n花费分布直方图：\n") + image
     }
 
@@ -307,7 +310,10 @@ object StarForce {
             buf.toByteArray().toExternalResource().use {
                 group.uploadImage(it)
             }
-        }.getOrNull()
+        }.getOrElse {
+            logger.error(it)
+            null
+        }
         return if (image == null) PlainText(s) else PlainText("$s\n花费分布直方图：\n") + image
     }
 
