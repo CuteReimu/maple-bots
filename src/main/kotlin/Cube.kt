@@ -92,8 +92,7 @@ object Cube {
         val (_, eToUR) = runCalculator(name, "red", Tier.Epic.ordinal, level, Tier.Legendary.ordinal, "")
         val (_, eToUB) = runCalculator(name, "black", Tier.Epic.ordinal, level, Tier.Legendary.ordinal, "")
         val (eToUCube, eToUCost) = if (eToUR < eToUB) "红" to eToUR else "黑" to eToUB
-        val prefix =
-            "以下是以${level}级${s}计算的理论结果：\n紫洗绿，使用${eToUCube}魔方，数学期望消耗${eToUCost.format()}"
+        val prefix = "以下是${level}级${s}的数学期望：\n紫洗绿，${eToUCube}魔方，${eToUCost.format()}"
         return getSelection(s, level).joinToString("", prefix) {
             val (_, red) = runCalculator(name, "red", Tier.Legendary.ordinal, level, Tier.Legendary.ordinal, it)
             val (_, black) = runCalculator(name, "black", Tier.Legendary.ordinal, level, Tier.Legendary.ordinal, it)
@@ -103,7 +102,7 @@ object Cube {
                 val arr = stat.split("+")
                 statMap[arr[0]]!!(arr[1])
             }
-            "\n想要达到${target}的目标，使用${color}魔方，数学期望消耗${cost.format()}"
+            "\n${target}，${color}魔方，${cost.format()}"
         }
     }
 
@@ -165,34 +164,17 @@ object Cube {
     // GMS community calculated rates: https://docs.google.com/spreadsheets/d/1od_hep5Y6x2ljfrh4M8zj5RwlpgYDRn5uTymx4iLPyw/pubhtml#
     // Nexon rates used when they match close enough to ours.
     private val tierRates = mapOf(
-        "occult" to mapOf(
-            0 to 0.009901
-        ),
+        "occult" to mapOf(Tier.Rare.ordinal to 0.009901),
         // Community rates are notably higher than nexon rates here. Assuming GMS is different and using those instead.
-        "master" to mapOf(
-            0 to 0.1184,
-            1 to 0.0381
-        ),
+        "master" to mapOf(Tier.Rare.ordinal to 0.1184, Tier.Epic.ordinal to 0.0381),
         // Community rates are notably higher than nexon rates here. Assuming GMS is different and using those instead.
         // The sample size isn't great, but anecdotes from people in twitch chats align with the community data.
         // That being said, take meister tier up rates with a grain of salt.
-        "meister" to mapOf(
-            0 to 0.1163,
-            1 to 0.0879,
-            2 to 0.0459
-        ),
+        "meister" to mapOf(Tier.Rare.ordinal to 0.1163, Tier.Epic.ordinal to 0.0879, Tier.Unique.ordinal to 0.0459),
         // Community rates notably higher than KMS rates, using them.
-        "red" to mapOf(
-            0 to 0.14,
-            1 to 0.06,
-            2 to 0.025
-        ),
+        "red" to mapOf(Tier.Rare.ordinal to 0.14, Tier.Epic.ordinal to 0.06, Tier.Unique.ordinal to 0.025),
         // Community rates notably higher than KMS rates, using them.
-        "black" to mapOf(
-            0 to 0.17,
-            1 to 0.11,
-            2 to 0.05
-        )
+        "black" to mapOf(Tier.Rare.ordinal to 0.17, Tier.Epic.ordinal to 0.11, Tier.Unique.ordinal to 0.05)
     )
 
     private class Result(
@@ -269,26 +251,15 @@ object Cube {
         // loop through all possible outcomes for 1st, 2nd, and 3rd line using consolidated cube data
         // sum up the rate of outcomes that satisfied the input to determine final probability
         var totalChance = 0.0
-        var totalCount = 0
-        var countUseful = 0
-        var countInvalid = 0
         for (line1 in consolidatedCubeData.first) {
             for (line2 in consolidatedCubeData.second) {
                 for (line3 in consolidatedCubeData.third) {
                     // check if this outcome meets our needs
                     val outcome = listOf(line1, line2, line3)
-                    if (satisfiesInput(outcome, probabilityInput)) {
-                        // calculate chance of this outcome occurring
-                        val result = calculateRate(outcome, consolidatedCubeData)
-                        totalChance += result
-
-                        if (result == 0.0) {
-                            countInvalid++
-                        } else {
-                            countUseful++
-                        }
-                    }
-                    totalCount++
+                    if (probabilityInput.all { (field, input) ->
+                            OUTCOME_MATCH_FUNCTION_MAP[field]!!(outcome, input.jsonPrimitive.int)
+                        }) // calculate chance of this outcome occurring
+                        totalChance += calculateRate(outcome, consolidatedCubeData)
                 }
             }
         }
@@ -401,14 +372,6 @@ object Cube {
 
         return chance
     }
-
-    /**
-     * 判断[outcome]是否满足输入的[probabilityInput]
-     */
-    private fun satisfiesInput(outcome: List<JsonArray>, probabilityInput: JsonObject) =
-        probabilityInput.all { (field, input) ->
-            OUTCOME_MATCH_FUNCTION_MAP[field]!!(outcome, input.jsonPrimitive.int)
-        }
 
     /**
      * 计算联合概率
