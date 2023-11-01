@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm") version "1.9.20"
     application
     kotlin("plugin.serialization") version "1.9.20"
-    id("net.mamoe.mirai-console") version "2.15.0"
+    id("net.mamoe.mirai-console") version "2.16.0"
 }
 
 group = "net.cutereimu.maplebots"
