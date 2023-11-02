@@ -163,8 +163,10 @@ object StarForce {
         val cur = runCatching { arr[1].toInt() }.getOrNull() ?: return null
         if (cur < 0) throw Exception("当前星数不合理")
         val des = runCatching { arr[2].toInt() }.getOrNull() ?: return null
-        if (des > 22) return PlainText("最多测试到22星")
         if (des <= cur) throw Exception("目标星数必须大于当前星数")
+        val maxStar = getMaxStar(itemLevel)
+        if (des > maxStar) throw Exception("${itemLevel}级装备最多升到${maxStar}星")
+        if (des > 22) return PlainText("最多测试到22星")
         val boomProtect = "保护" in content
         val thirtyOff = "七折" in content || "超必" in content
         val fiveTenFifteen = "必成" in content || "超必" in content
@@ -229,14 +231,7 @@ object StarForce {
 
     suspend fun doStuff(group: Group, itemLevel: Int, thirtyOff: Boolean, fiveTenFifteen: Boolean): Message {
         if (itemLevel < 5 || itemLevel > 300) throw Exception("装备等级不合理")
-        val maxStar = when {
-            itemLevel < 100 -> 5
-            itemLevel < 110 -> 8
-            itemLevel < 120 -> 10
-            itemLevel < 130 -> 15
-            itemLevel < 140 -> 20
-            else -> 25
-        }
+        val maxStar = getMaxStar(itemLevel)
         val (exp, divisor) = when {
             maxStar <= 5 -> "" to 1.0
             maxStar <= 10 -> "(M)" to 1000000.0
@@ -345,6 +340,15 @@ object StarForce {
         doubleArrayOf(0.3, 0.63, 0.0, 0.07),
         doubleArrayOf(0.3, 0.0, 0.63, 0.07), // 只算到22星
     )
+
+    private fun getMaxStar(itemLevel: Int) = when {
+        itemLevel < 95 -> 5
+        itemLevel < 108 -> 8
+        itemLevel < 118 -> 10
+        itemLevel < 128 -> 15
+        itemLevel < 138 -> 20
+        else -> 25
+    }
 
     private val logger: MiraiLogger by lazy {
         MiraiLogger.Factory.create(this::class, this::class.java.name)
