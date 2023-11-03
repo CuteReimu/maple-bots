@@ -159,13 +159,13 @@ object StarForce {
         val arr = content.split(" ")
         if (arr.size < 3) return null
         val itemLevel = runCatching { arr[0].toInt() }.getOrNull() ?: return null
-        if (itemLevel < 5 || itemLevel > 300) throw Exception("装备等级不合理")
+        if (itemLevel < 5 || itemLevel > 300) return PlainText("装备等级不合理")
         val cur = runCatching { arr[1].toInt() }.getOrNull() ?: return null
-        if (cur < 0) throw Exception("当前星数不合理")
+        if (cur < 0) return PlainText("当前星数不合理")
         val des = runCatching { arr[2].toInt() }.getOrNull() ?: return null
-        if (des <= cur) throw Exception("目标星数必须大于当前星数")
+        if (des <= cur) return PlainText("目标星数必须大于当前星数")
         val maxStar = getMaxStar(itemLevel)
-        if (des > maxStar) throw Exception("${itemLevel}级装备最多升到${maxStar}星")
+        if (des > maxStar) return PlainText("${itemLevel}级装备最多升到${maxStar}星")
         if (des > 22) return PlainText("最多测试到22星")
         val boomProtect = "保护" in content
         val thirtyOff = "七折" in content || "超必" in content
@@ -230,7 +230,7 @@ object StarForce {
     }
 
     suspend fun doStuff(group: Group, itemLevel: Int, thirtyOff: Boolean, fiveTenFifteen: Boolean): Message {
-        if (itemLevel < 5 || itemLevel > 300) throw Exception("装备等级不合理")
+        if (itemLevel < 5 || itemLevel > 300) return PlainText("装备等级不合理")
         val maxStar = getMaxStar(itemLevel)
         val (exp, divisor) = when {
             maxStar <= 5 -> "" to 1.0
