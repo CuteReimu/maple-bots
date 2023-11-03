@@ -6,6 +6,7 @@ import net.cutereimu.maplebots.ImageCache.ImageData
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.contact.Group
+import net.mamoe.mirai.contact.MemberPermission
 import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.EventPriority
 import net.mamoe.mirai.event.events.FriendMessageEvent
@@ -98,34 +99,46 @@ internal object PluginMain : KotlinPlugin(
                 } else if (content.startsWith("洗魔方 ")) {
                     Cube.doStuff(content.substring(3).trim())?.let { group.sendMessage(it) }
                 } else if (content.startsWith("添加词条 ")) {
-                    val key = content.substring(4).trim()
-                    if (key.isNotEmpty()) {
-                        if (key in QunDb.data || key in DefaultQunDb.data) {
-                            group.sendMessage("词条已存在")
-                        } else {
-                            group.sendMessage("请输入要添加的内容")
-                            addDbQQList[sender.id] = key to "添加词条成功"
+                    if (sender.permission < MemberPermission.ADMINISTRATOR && sender.id != Config.admin) {
+                        group.sendMessage("没有权限")
+                    } else {
+                        val key = content.substring(4).trim()
+                        if (key.isNotEmpty()) {
+                            if (key in QunDb.data || key in DefaultQunDb.data) {
+                                group.sendMessage("词条已存在")
+                            } else {
+                                group.sendMessage("请输入要添加的内容")
+                                addDbQQList[sender.id] = key to "添加词条成功"
+                            }
                         }
                     }
                 } else if (content.startsWith("修改词条 ")) {
-                    val key = content.substring(4).trim()
-                    if (key.isNotEmpty()) {
-                        if (key !in QunDb.data && key !in DefaultQunDb.data) {
-                            group.sendMessage("词条不存在")
-                        } else {
-                            group.sendMessage("请输入要修改的内容")
-                            addDbQQList[sender.id] = key to "修改词条成功"
+                    if (sender.permission < MemberPermission.ADMINISTRATOR && sender.id != Config.admin) {
+                        group.sendMessage("没有权限")
+                    } else {
+                        val key = content.substring(4).trim()
+                        if (key.isNotEmpty()) {
+                            if (key !in QunDb.data && key !in DefaultQunDb.data) {
+                                group.sendMessage("词条不存在")
+                            } else {
+                                group.sendMessage("请输入要修改的内容")
+                                addDbQQList[sender.id] = key to "修改词条成功"
+                            }
                         }
                     }
                 } else if (content.startsWith("删除词条 ")) {
-                    val key = content.substring(4).trim()
-                    if (key.isNotEmpty()) {
-                        if (key !in QunDb.data && key !in DefaultQunDb.data) {
-                            group.sendMessage("词条不存在")
-                        } else {
-                            QunDb.data -= key
-                            DefaultQunDb.data -= key
-                            group.sendMessage("删除词条成功")
+                    if (sender.permission < MemberPermission.ADMINISTRATOR && sender.id != Config.admin) {
+                        group.sendMessage("没有权限")
+                    } else {
+                        val key = content.substring(4).trim()
+                        if (key.isNotEmpty()) {
+                            if (key !in QunDb.data && key !in DefaultQunDb.data) {
+                                group.sendMessage("词条不存在")
+                            } else {
+                                QunDb.data -= key
+                                DefaultQunDb.data -= key
+                                group.sendMessage("删除词条成功")
+                            }
                         }
                     }
                 } else if (content.startsWith("查询词条 ") || content.startsWith("搜索词条 ")) {
