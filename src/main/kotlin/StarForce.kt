@@ -78,7 +78,7 @@ object StarForce {
             probabilityBoom = 0.0
         }
         // star catch adjustment
-        probabilitySuccess *= 1.045
+        probabilitySuccess *= 1.05
         val leftOver = 1 - probabilitySuccess
         if (probabilityDecrease == 0.0) {
             probabilityMaintain *= leftOver / (probabilityMaintain + probabilityBoom)
