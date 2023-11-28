@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm") version "1.9.20"
     application
-    kotlin("plugin.serialization") version "1.9.20"
+    kotlin("plugin.serialization") version "1.9.21"
     id("net.mamoe.mirai-console") version "2.15.0"
 }
 
