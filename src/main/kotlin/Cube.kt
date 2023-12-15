@@ -12,6 +12,9 @@ object Cube {
     }
 
     private val nameMap = mapOf(
+        "戒指" to ("accessory" to 150),
+        "项链" to ("accessory" to 150),
+        "耳环" to ("accessory" to 150),
         "首饰" to ("accessory" to 150),
         "腰带" to ("belt" to 150),
         "副手" to ("secondary" to 140),
