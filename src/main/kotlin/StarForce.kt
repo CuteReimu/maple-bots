@@ -166,7 +166,7 @@ object StarForce {
         if (des <= cur) return PlainText("目标星数必须大于当前星数")
         val maxStar = getMaxStar(itemLevel)
         if (des > maxStar) return PlainText("${itemLevel}级装备最多升到${maxStar}星")
-        if (des > 22) return PlainText("最多测试到22星")
+        if (des > 23) return PlainText("最多测试到23星")
         val boomProtect = "保护" in content
         val thirtyOff = "七折" in content || "超必" in content
         val fiveTenFifteen = "必成" in content || "超必" in content
@@ -316,6 +316,10 @@ object StarForce {
     private const val MAINTAIN = 1
     private const val DECREASE = 2
     private const val BOOM = 3
+
+    /**
+     * current_star => (success, maintain, decrease, boom)
+     */
     private val rates = arrayOf(
         doubleArrayOf(0.95, 0.05, 0.0, 0.0),
         doubleArrayOf(0.9, 0.1, 0.0, 0.0),
@@ -338,7 +342,10 @@ object StarForce {
         doubleArrayOf(0.3, 0.0, 0.672, 0.028),
         doubleArrayOf(0.3, 0.0, 0.672, 0.028),
         doubleArrayOf(0.3, 0.63, 0.0, 0.07),
-        doubleArrayOf(0.3, 0.0, 0.63, 0.07), // 只算到22星
+        doubleArrayOf(0.3, 0.0, 0.63, 0.07),
+        doubleArrayOf(0.03, 0.0, 0.776, 0.194),
+        doubleArrayOf(0.02, 0.0, 0.686, 0.294),
+        doubleArrayOf(0.01, 0.0, 0.594, 0.396),
     )
 
     private fun getMaxStar(itemLevel: Int) = when {
