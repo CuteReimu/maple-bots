@@ -253,6 +253,7 @@ internal object PluginMain : KotlinPlugin(
         val request = Request.Builder().url(url)
             .header("Content-Type", "application/x-www-form-urlencoded")
             .header("user-agent", ua)
+            .header("connection", "close")
             .get().build()
         val resp = client.newCall(request).execute()
         if (resp.code != 200) {
