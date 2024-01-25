@@ -76,7 +76,7 @@ object FindRole {
         )
 
         if (data.graphData != null) {
-            val values = ArrayList<Pair<Double, String>>()
+            val values = ArrayList<Pair<Long, String>>()
             for (i in data.graphData.indices) {
                 val levelExp = data.graphData[i].currentExp + data.graphData[i].expToNextLevel
                 if (LevelExpData.data[data.graphData[i].level] != levelExp)
@@ -95,13 +95,13 @@ object FindRole {
                             exp
                         } else {
                             data.graphData[i - 1].expDifference
-                        } / 1000000000.0
+                        }
                     values.add(expDifference to data.graphData[i].dateLabel)
                 }
             }
-            if (values.isNotEmpty()) {
+            if (values.any { it.first != 0L }) {
                 val dataset = DefaultCategoryDataset()
-                values.asReversed().forEach { dataset.addValue(it.first, "", it.second) }
+                values.asReversed().forEach { dataset.addValue(it.first / 1000000000.0, "", it.second) }
                 val chart = ChartFactory.createBarChart(
                     "",
                     "",
@@ -154,7 +154,7 @@ class CharacterData(
     val image: String,
 
     @SerialName("GraphData")
-    val graphData: List<GraphData>?,
+    val graphData: List<GraphData>? = null,
 )
 
 @Serializable
