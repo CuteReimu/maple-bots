@@ -37,6 +37,8 @@ internal object PluginMain : KotlinPlugin(
         DefaultQunDb.reload()
         QunDb.reload()
         ImageCache.reload()
+        FindRoleData.reload()
+        LevelExpData.reload()
         removeTimeoutImages()
 
         val addDbQQList = ConcurrentHashMap<Long, Pair<String, String>>()
@@ -51,11 +53,47 @@ internal object PluginMain : KotlinPlugin(
             if (group.id !in Config.qqGroups)
                 return@subscribeAlways
             launch {
+                val messages = message.filter { it is At || it is PlainText }
+                if (messages.size >= 2) {
+                    (messages[0] as? PlainText)?.let { content ->
+                        if (content.content.trim() == "查询") {
+                            val at = messages[1] as? At ?: return@let
+                            val name = FindRoleData.data[at.target]
+                            if (name == null) group.sendMessage("该玩家还未绑定")
+                            else FindRole.doStuff(group, name).let { group.sendMessage(it) }
+                        }
+                    }
+                }
                 val content = message.contentToString()
                 if (content == "ping") {
                     group.sendMessage(At(sender) + "pong")
                 } else if (content == "roll") {
                     group.sendMessage("${sender.nameCardOrNick} roll: ${Random.nextInt(0, 100)}")
+                } else if (content == "查询我") {
+                    val name = FindRoleData.data[sender.id]
+                    if (name == null) group.sendMessage("你还未绑定")
+                    else FindRole.doStuff(group, name).let { group.sendMessage(it) }
+                } else if (content.startsWith("查询 ")) {
+                    val name = content.substring(2).trim()
+                    if (name.all { it in '0'..'9' || it in 'a'..'z' || it in 'A'..'Z' })
+                        FindRole.doStuff(group, name).let { group.sendMessage(it) }
+                } else if (content.startsWith("绑定 ")) {
+                    if (sender.id in FindRoleData.data) {
+                        group.sendMessage("你已经绑定过了，如需更换请先解绑")
+                    } else {
+                        val name = content.substring(2).trim()
+                        if (name.all { it in '0'..'9' || it in 'a'..'z' || it in 'A'..'Z' }) {
+                            FindRoleData.data += sender.id to name
+                            group.sendMessage("绑定成功")
+                        }
+                    }
+                } else if (content == "解绑") {
+                    if (sender.id in FindRoleData.data) {
+                        FindRoleData.data -= sender.id
+                        group.sendMessage("解绑成功")
+                    } else {
+                        group.sendMessage("你还未绑定")
+                    }
                 } else if (content.startsWith("模拟升星 ") || content.startsWith("模拟上星 ")
                     || content.startsWith("升星期望 ") || content.startsWith("上星期望 ")
                 ) {
@@ -244,12 +282,12 @@ internal object PluginMain : KotlinPlugin(
             }
         }?.toMessageChain()
 
-    private const val ua =
+    internal const val ua =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36 Edg/97.0.1072.69"
-    private val client = OkHttpClient().newBuilder().followRedirects(false)
+    internal val client = OkHttpClient().newBuilder().followRedirects(false)
         .connectTimeout(Duration.ofMillis(20000)).callTimeout(Duration.ofMillis(20000)).build()
 
-    private fun getPic(url: String): InputStream {
+    internal fun getPic(url: String): InputStream {
         val request = Request.Builder().url(url)
             .header("Content-Type", "application/x-www-form-urlencoded")
             .header("user-agent", ua)
