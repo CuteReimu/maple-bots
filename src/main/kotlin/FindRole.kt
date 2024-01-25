@@ -70,56 +70,62 @@ object FindRole {
             |角色名：${data.name}
             |等级：${data.level}(${data.expPercent}%)
             |联盟：${data.legionLevel}
-            |""".trimMargin().toPlainText()
+            |""".trimMargin()
+                .let { s -> if (data.graphData != null && data.graphData.any { it.expDifference != 0L }) s else s + "近日无经验变化\n" }
+                .toPlainText()
         )
 
-        val dataset = DefaultCategoryDataset()
-        val values = ArrayList<Pair<Double, String>>()
-        for (i in data.graphData.indices) {
-            val levelExp = data.graphData[i].currentExp + data.graphData[i].expToNextLevel
-            if (LevelExpData.data[data.graphData[i].level] != levelExp)
-                LevelExpData.data += data.graphData[i].level to levelExp
-            if (i > 0) {
-                val expDifference =
-                    if (data.graphData[i].level > data.graphData[i - 1].level) {
-                        var exp = data.graphData[i - 1].expToNextLevel + data.graphData[i].currentExp
-                        if (data.graphData[i].level - data.graphData[i - 1].level > 1) {
-                            LevelExpData.data.let {
-                                for (j in data.graphData[i - 1].level + 1 until data.graphData[i].level) {
-                                    exp += it.getOrDefault(j, 0)
+        if (data.graphData != null) {
+            val values = ArrayList<Pair<Double, String>>()
+            for (i in data.graphData.indices) {
+                val levelExp = data.graphData[i].currentExp + data.graphData[i].expToNextLevel
+                if (LevelExpData.data[data.graphData[i].level] != levelExp)
+                    LevelExpData.data += data.graphData[i].level to levelExp
+                if (i > 0) {
+                    val expDifference =
+                        if (data.graphData[i].level > data.graphData[i - 1].level) {
+                            var exp = data.graphData[i - 1].expToNextLevel + data.graphData[i].currentExp
+                            if (data.graphData[i].level - data.graphData[i - 1].level > 1) {
+                                LevelExpData.data.let {
+                                    for (j in data.graphData[i - 1].level + 1 until data.graphData[i].level) {
+                                        exp += it.getOrDefault(j, 0)
+                                    }
                                 }
                             }
-                        }
-                        exp
-                    } else {
-                        data.graphData[i - 1].expDifference
-                    } / 1000000000.0
-                values.add(expDifference to data.graphData[i].dateLabel)
+                            exp
+                        } else {
+                            data.graphData[i - 1].expDifference
+                        } / 1000000000.0
+                    values.add(expDifference to data.graphData[i].dateLabel)
+                }
             }
-        }
-        values.asReversed().forEach { dataset.addValue(it.first, "", it.second) }
-        val chart = ChartFactory.createBarChart(
-            "",
-            "",
-            "Exp(B)",
-            dataset,
-            PlotOrientation.HORIZONTAL,
-            false,
-            false,
-            false
-        )
-        val img = BufferedImage(480, 360, BufferedImage.TYPE_INT_RGB)
-        chart.draw(img.createGraphics(), Rectangle(480, 360))
-        try {
-            val buf = ByteArrayOutputStream()
-            withContext(Dispatchers.IO) {
-                ImageIO.write(img, "png", buf)
+            if (values.isNotEmpty()) {
+                val dataset = DefaultCategoryDataset()
+                values.asReversed().forEach { dataset.addValue(it.first, "", it.second) }
+                val chart = ChartFactory.createBarChart(
+                    "",
+                    "",
+                    "Exp(B)",
+                    dataset,
+                    PlotOrientation.HORIZONTAL,
+                    false,
+                    false,
+                    false
+                )
+                val img = BufferedImage(480, 360, BufferedImage.TYPE_INT_RGB)
+                chart.draw(img.createGraphics(), Rectangle(480, 360))
+                try {
+                    val buf = ByteArrayOutputStream()
+                    withContext(Dispatchers.IO) {
+                        ImageIO.write(img, "png", buf)
+                    }
+                    buf.toByteArray().toExternalResource().use {
+                        group.uploadImage(it)
+                    }.let { ret.add(it) }
+                } catch (e: Exception) {
+                    logger.error("上传图片失败", e)
+                }
             }
-            buf.toByteArray().toExternalResource().use {
-                group.uploadImage(it)
-            }.let { ret.add(it) }
-        } catch (e: Exception) {
-            logger.error("上传图片失败", e)
         }
 
         return ret.toMessageChain()
@@ -148,7 +154,7 @@ class CharacterData(
     val image: String,
 
     @SerialName("GraphData")
-    val graphData: List<GraphData>,
+    val graphData: List<GraphData>?,
 )
 
 @Serializable
