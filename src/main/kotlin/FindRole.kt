@@ -71,7 +71,7 @@ object FindRole {
             |等级：${data.level}(${data.expPercent}%)
             |联盟：${data.legionLevel}
             |""".trimMargin()
-                .let { s -> if (data.graphData != null && data.graphData.any { it.expDifference != 0L }) s else s + "近日无经验变化\n" }
+                .let { s -> if (data.graphData != null && data.graphData.any { it.expDifference != 0L }) s else s + "近日无经验变化" }
                 .toPlainText()
         )
 
