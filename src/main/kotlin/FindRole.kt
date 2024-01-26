@@ -57,17 +57,20 @@ object FindRole {
         val data = json.parseToJsonElement(body).jsonObject["CharacterData"]!!.decode<CharacterData>()
         val ret = ArrayList<Message>()
 
-        try {
-            PluginMain.getPic(data.image).use { `is` ->
-                `is`.toExternalResource().use { group.uploadImage(it) }
-            }.let { ret.add(it) }
-        } catch (e: Exception) {
-            logger.error("获取或上传图片失败", e)
+        data.image?.let { image ->
+            try {
+                PluginMain.getPic(image).use { `is` ->
+                    `is`.toExternalResource().use { group.uploadImage(it) }
+                }.let { ret.add(it) }
+            } catch (e: Exception) {
+                logger.error("获取或上传图片失败", e)
+            }
         }
 
         ret.add(
             """
             |角色名：${data.name}
+            |职业：${data.`class`}
             |等级：${data.level}(${data.expPercent}%)
             |联盟：${data.legionLevel}
             |""".trimMargin()
@@ -81,7 +84,7 @@ object FindRole {
                 val levelExp = data.graphData[i].currentExp + data.graphData[i].expToNextLevel
                 if (LevelExpData.data[data.graphData[i].level] != levelExp)
                     LevelExpData.data += data.graphData[i].level to levelExp
-                if (i > 0) {
+                if (i > 0 && !data.graphData[i].dateLabel.isNullOrEmpty()) {
                     val expDifference =
                         if (data.graphData[i].level > data.graphData[i - 1].level) {
                             var exp = data.graphData[i - 1].expToNextLevel + data.graphData[i].currentExp
@@ -96,7 +99,7 @@ object FindRole {
                         } else {
                             data.graphData[i - 1].expDifference
                         }
-                    values.add(expDifference to data.graphData[i].dateLabel)
+                    values.add(expDifference to data.graphData[i].dateLabel!!)
                 }
             }
             if (values.any { it.first != 0L }) {
@@ -138,20 +141,23 @@ object FindRole {
 
 @Serializable
 class CharacterData(
+    @SerialName("Class")
+    val `class`: String = "",
+
     @SerialName("EXPPercent")
-    val expPercent: Double,
+    val expPercent: Double = 0.0,
 
     @SerialName("Level")
-    val level: Int,
+    val level: Int = 0,
 
     @SerialName("LegionLevel")
-    val legionLevel: Int,
+    val legionLevel: Int = 0,
 
     @SerialName("Name")
-    val name: String,
+    val name: String = "",
 
     @SerialName("CharacterImageURL")
-    val image: String,
+    val image: String? = null,
 
     @SerialName("GraphData")
     val graphData: List<GraphData>? = null,
@@ -160,17 +166,17 @@ class CharacterData(
 @Serializable
 class GraphData(
     @SerialName("CurrentEXP")
-    val currentExp: Long,
+    val currentExp: Long = 0,
 
     @SerialName("DateLabel")
-    val dateLabel: String,
+    val dateLabel: String? = null,
 
     @SerialName("EXPDifference")
-    val expDifference: Long,
+    val expDifference: Long = 0,
 
     @SerialName("EXPToNextLevel")
-    val expToNextLevel: Long,
+    val expToNextLevel: Long = 0,
 
     @SerialName("Level")
-    val level: Int,
+    val level: Int = 0,
 )
