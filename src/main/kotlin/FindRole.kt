@@ -142,7 +142,7 @@ object FindRole {
                     }
                 }
                 LevelExpData.data[data.level]?.let {
-                    val days = ceil((it - data.exp) / (sumExp.toDouble() / values.size)).toInt()
+                    val days = ceil((it - data.exp) / aveExp).toInt()
                     s += "预计还有${days}天升级\n"
                 }
             }
