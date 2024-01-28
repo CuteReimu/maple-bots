@@ -88,7 +88,7 @@ object FindRole {
                             var exp = data.graphData[i - 1].expToNextLevel + data.graphData[i].currentExp
                             if (data.graphData[i].level - data.graphData[i - 1].level > 1) {
                                 LevelExpData.data.let {
-                                    for (j in data.graphData[i - 1].level + 1 until data.graphData[i].level) {
+                                    for (j in data.graphData[i - 1].level + 1..<data.graphData[i].level) {
                                         exp += it.getOrDefault(j, 0)
                                     }
                                 }
@@ -132,8 +132,15 @@ object FindRole {
         if (expImage == null) {
             s += "近日无经验变化"
         } else if (values.isNotEmpty()) {
-            val sumExp = values.sumOf { it.first }
+            var sumExp = values.sumOf { it.first }
             if (sumExp > 0) {
+                var aveExp = sumExp.toDouble() / values.size
+                values.filter { it.first.toDouble() in (aveExp / 20)..(aveExp * 20) }.run {
+                    if (isNotEmpty()) {
+                        sumExp = sumOf { it.first }
+                        if (sumExp > 0) aveExp = sumExp.toDouble() / size
+                    }
+                }
                 LevelExpData.data[data.level]?.let {
                     val days = ceil((it - data.exp) / (sumExp.toDouble() / values.size)).toInt()
                     s += "预计还有${days}天升级\n"
