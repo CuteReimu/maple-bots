@@ -337,7 +337,7 @@ internal object PluginMain : KotlinPlugin(
                             val buf = file.readBytes()
                             val image = buf.toExternalResource().use { group.uploadImage(it) }
                             File("chat-images").apply { if (!exists()) mkdirs() }
-                            File("chat-images${File.separatorChar}${m.imageId}").writeBytes(buf)
+                            File("chat-images${File.separatorChar}${image.imageId}").writeBytes(buf)
                             ImageCache.data += image.imageId to ImageData(now)
                             return@map image
                         }
