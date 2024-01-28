@@ -39,7 +39,13 @@ internal object PluginMain : KotlinPlugin(
         ImageCache.reload()
         FindRoleData.reload()
         LevelExpData.reload()
-        removeTimeoutImages()
+        Timer().schedule(object : TimerTask() {
+            override fun run() {
+                launch {
+                    removeTimeoutImages()
+                }
+            }
+        }, 0, 24 * 60 * 60 * 1000)
 
         val addDbQQList = ConcurrentHashMap<Long, Pair<String, String>>()
 
@@ -345,11 +351,18 @@ internal object PluginMain : KotlinPlugin(
 
     private fun removeTimeoutImages() {
         val files = File("chat-images").list() ?: return
-        val fileSet = files.toMutableSet()
+        val deleteFileSet = files.toMutableSet()
+        val remainFileSet = HashSet<String>()
         QunDb.data.forEach { (_, v) ->
             val message = MessageChain.deserializeFromJsonString(v)
-            message.forEach { m -> (m as? Image)?.imageId?.also { fileSet -= it } }
+            message.forEach { m ->
+                (m as? Image)?.imageId?.also {
+                    deleteFileSet -= it
+                    remainFileSet += it
+                }
+            }
         }
-        fileSet.forEach { File("chat-images${File.separatorChar}$it").delete() }
+        deleteFileSet.forEach { File("chat-images${File.separatorChar}$it").delete() }
+        ImageCache.data = ImageCache.data.filter { (imageId, _) -> imageId in remainFileSet }
     }
 }
