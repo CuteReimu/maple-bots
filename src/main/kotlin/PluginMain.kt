@@ -142,6 +142,16 @@ internal object PluginMain : KotlinPlugin(
                     }
                 } else if (content.startsWith("洗魔方 ")) {
                     Cube.doStuff(content.substring(3).trim())?.let { group.sendMessage(it) }
+                } else if (content == "查看过期词条") {
+                    if (sender.permission < MemberPermission.ADMINISTRATOR && sender.id != Config.admin) {
+                        group.sendMessage("没有权限")
+                    } else {
+                        val keys = QunDb.data.filter { (_, value) ->
+                            containsExpiredImage(MessageChain.deserializeFromJsonString(value))
+                        }.keys
+                        if (keys.isNotEmpty()) group.sendMessage(keys.joinToString(separator = "\n"))
+                        else group.sendMessage("没有过期词条")
+                    }
                 } else if (content.startsWith("添加词条 ")) {
                     if (sender.permission < MemberPermission.ADMINISTRATOR && sender.id != Config.admin) {
                         group.sendMessage("没有权限")
@@ -320,6 +330,11 @@ internal object PluginMain : KotlinPlugin(
                 }
             }
         }
+    }
+
+    private fun containsExpiredImage(mc: MessageChain): Boolean = mc.any {
+        it is Image && !(File("chat-images").exists() &&
+                File("chat-images${File.separatorChar}${it.imageId}").exists())
     }
 
     private suspend fun ensureImage(group: Group, ms: MessageChain): MessageChain {
