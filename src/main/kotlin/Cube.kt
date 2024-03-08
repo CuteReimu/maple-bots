@@ -108,7 +108,8 @@ object Cube {
         val (_, eToLR) = runCalculator(name, "red", Tier.Epic.ordinal, level, Tier.Legendary.ordinal, "")
         val (_, eToLB) = runCalculator(name, "black", Tier.Epic.ordinal, level, Tier.Legendary.ordinal, "")
         val (eToLCube, eToLCost) = if (eToLR < eToLB) "红" to eToLR else "黑" to eToLB
-        val prefix = "以下是${level}级${s}的数学期望：\n紫洗绿，${eToLCube}魔方，${eToLCost.format()}"
+        var prefix = "以下是${level}级${s}的数学期望："
+        if (name !in listOf("weapon", "secondary", "emblem")) prefix += "\n紫洗绿，${eToLCube}魔方，${eToLCost.format()}"
         return getSelection(s, level).joinToString("", prefix) {
             val (_, red) = runCalculator(name, "red", Tier.Legendary.ordinal, level, Tier.Legendary.ordinal, it)
             val (_, black) = runCalculator(name, "black", Tier.Legendary.ordinal, level, Tier.Legendary.ordinal, it)
