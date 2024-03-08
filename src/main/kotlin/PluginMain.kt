@@ -78,7 +78,7 @@ internal object PluginMain : KotlinPlugin(
                 } else if (content.startsWith("roll ")) {
                     val upperLimit = runCatching { content.substring(4).trim().toInt() }.getOrNull() ?: 0
                     if (upperLimit > 0)
-                        group.sendMessage("${sender.nameCardOrNick} roll: ${Random.nextInt(1..upperLimit)}")
+                        group.sendMessage("${sender.nameCardOrNick} roll: ${Random.nextInt(1, upperLimit + 1)}")
                 } else if (content == "查询我") {
                     val name = FindRoleData.data[sender.id]
                     if (name == null) group.sendMessage("你还未绑定")
