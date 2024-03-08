@@ -44,6 +44,9 @@ object Cube {
         "lineDrop" to { v: String -> "${v}条爆" },
         "lineMesoOrDrop" to { v: String -> "${v}条钱爆" },
         "secCooldown" to { v: String -> "${v}秒CD" },
+        "lineAttOrBoss" to { v: String -> "${v}条攻或BD" },
+        "lineAttOrBossOrIed" to { v: String -> "总计${v}条有用属性" },
+        "lineBossOrIed" to { v: String -> "${v}条BD或无视" },
     )
 
     private val defaultSelections = IntProgression.fromClosedRange(18, 36, 3).map { "percStat+$it" }
@@ -67,19 +70,29 @@ object Cube {
     private val wsSelections = listOf(
         intArrayOf(18, 21, 24, 30, 33, 36).map { "percAtt+$it" },
         IntProgression.fromClosedRange(18, 24, 3).map { "lineIed+1&percAtt+$it" },
+        List(3) { "lineAttOrBossOrIed+${it + 1}" },
+        listOf("lineAtt+1&lineAttOrBossOrIed+2", "lineAtt+1&lineAttOrBossOrIed+3", "lineAtt+2&lineAttOrBossOrIed+3"),
         listOf("lineAtt+1&lineBoss+1", "lineAtt+1&lineBoss+2", "lineAtt+2&lineBoss+1"),
         IntProgression.fromClosedRange(30, 40, 5).map { "percAtt+21&percBoss+$it" },
         listOf("percAtt+24&percBoss+30"),
+        List(3) { "lineAttOrBoss+${it + 1}" },
     ).flatten()
     private val wsSelections160 = listOf(
-        intArrayOf(18, 21, 24, 33, 36, 39).map { "percAtt+$it" },
+        intArrayOf(21, 24, 33, 36, 39).map { "percAtt+$it" },
         IntProgression.fromClosedRange(20, 26, 3).map { "lineIed+1&percAtt+$it" },
+        List(3) { "lineAttOrBossOrIed+${it + 1}" },
+        listOf("lineAtt+1&lineAttOrBossOrIed+2", "lineAtt+1&lineAttOrBossOrIed+3", "lineAtt+2&lineAttOrBossOrIed+3"),
         listOf("lineAtt+1&lineBoss+1", "lineAtt+1&lineBoss+2", "lineAtt+2&lineBoss+1"),
         IntProgression.fromClosedRange(30, 40, 5).map { "percAtt+23&percBoss+$it" },
         listOf("percAtt+26&percBoss+30"),
+        List(3) { "lineAttOrBoss+${it + 1}" },
     ).flatten()
-    private val eSelections = intArrayOf(18, 21, 24, 30, 33, 36).map { "percAtt+$it" } +
-            IntProgression.fromClosedRange(18, 24, 3).map { "lineIed+1&percAtt+$it" }
+    private val eSelections = listOf(
+        intArrayOf(18, 21, 24, 30, 33, 36).map { "percAtt+$it" },
+        IntProgression.fromClosedRange(18, 24, 3).map { "lineIed+1&percAtt+$it" },
+        List(3) { "lineAttOrBossOrIed+${it + 1}" },
+        listOf("lineAtt+1&lineAttOrBossOrIed+2", "lineAtt+1&lineAttOrBossOrIed+3", "lineAtt+2&lineAttOrBossOrIed+3")
+    ).flatten()
 
     private fun getSelection(name: String, itemLevel: Int) = when (name) {
         "纹章" -> eSelections // 纹章现在只算100的
@@ -92,16 +105,17 @@ object Cube {
 
     fun doStuff(s: String): String? {
         val (name, level) = nameMap[s] ?: return null
-        val (_, eToUR) = runCalculator(name, "red", Tier.Epic.ordinal, level, Tier.Legendary.ordinal, "")
-        val (_, eToUB) = runCalculator(name, "black", Tier.Epic.ordinal, level, Tier.Legendary.ordinal, "")
-        val (eToUCube, eToUCost) = if (eToUR < eToUB) "红" to eToUR else "黑" to eToUB
-        val prefix = "以下是${level}级${s}的数学期望：\n紫洗绿，${eToUCube}魔方，${eToUCost.format()}"
+        val (_, eToLR) = runCalculator(name, "red", Tier.Epic.ordinal, level, Tier.Legendary.ordinal, "")
+        val (_, eToLB) = runCalculator(name, "black", Tier.Epic.ordinal, level, Tier.Legendary.ordinal, "")
+        val (eToLCube, eToLCost) = if (eToLR < eToLB) "红" to eToLR else "黑" to eToLB
+        val prefix = "以下是${level}级${s}的数学期望：\n紫洗绿，${eToLCube}魔方，${eToLCost.format()}"
         return getSelection(s, level).joinToString("", prefix) {
             val (_, red) = runCalculator(name, "red", Tier.Legendary.ordinal, level, Tier.Legendary.ordinal, it)
             val (_, black) = runCalculator(name, "black", Tier.Legendary.ordinal, level, Tier.Legendary.ordinal, it)
             val (color, cost) = if (red <= black) "红" to red else "黑" to black
-            if (cost < eToUCost) return@joinToString ""
-            val target = it.split("&").joinToString("与") { stat ->
+            if (cost < eToLCost) return@joinToString ""
+            if (name in listOf("weapon", "secondary", "emblem") && cost < eToLCost * 10) return@joinToString ""
+            val target = it.split("&").joinToString("") { stat ->
                 val arr = stat.split("+")
                 statMap[arr[0]]!!(arr[1])
             }
@@ -557,6 +571,10 @@ object Cube {
                     calculateTotal(outcome, CATEGORY.BOSSDMG_PERC) +
                     calculateTotal(outcome, CATEGORY.IED_PERC) >= requiredVal
         },
+        "lineBossOrIed" to { outcome, requiredVal ->
+            calculateTotal(outcome, CATEGORY.BOSSDMG_PERC) +
+                    calculateTotal(outcome, CATEGORY.IED_PERC) >= requiredVal
+        }
     )
 
     @Suppress("UNUSED")
