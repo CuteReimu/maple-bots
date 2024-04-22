@@ -34,11 +34,11 @@ internal object PluginMain : KotlinPlugin(
 ) {
     override fun onEnable() {
         Config.reload()
-        DefaultQunDb.reload()
         QunDb.reload()
         ImageCache.reload()
         FindRoleData.reload()
         LevelExpData.reload()
+        QunDb.data = QunDb.data.mapKeys { it.key.lowercase() }
         Timer().schedule(object : TimerTask() {
             override fun run() {
                 launch {
@@ -160,9 +160,9 @@ internal object PluginMain : KotlinPlugin(
                     if (sender.permission < MemberPermission.ADMINISTRATOR && sender.id != Config.admin) {
                         group.sendMessage("没有权限")
                     } else {
-                        val key = content.substring(4).trim()
+                        val key = content.substring(4).trim().lowercase()
                         if (key.isNotEmpty()) {
-                            if (key in QunDb.data || key in DefaultQunDb.data) {
+                            if (key in QunDb.data) {
                                 group.sendMessage("词条已存在")
                             } else {
                                 group.sendMessage("请输入要添加的内容")
@@ -174,9 +174,9 @@ internal object PluginMain : KotlinPlugin(
                     if (sender.permission < MemberPermission.ADMINISTRATOR && sender.id != Config.admin) {
                         group.sendMessage("没有权限")
                     } else {
-                        val key = content.substring(4).trim()
+                        val key = content.substring(4).trim().lowercase()
                         if (key.isNotEmpty()) {
-                            if (key !in QunDb.data && key !in DefaultQunDb.data) {
+                            if (key !in QunDb.data) {
                                 group.sendMessage("词条不存在")
                             } else {
                                 group.sendMessage("请输入要修改的内容")
@@ -188,23 +188,20 @@ internal object PluginMain : KotlinPlugin(
                     if (sender.permission < MemberPermission.ADMINISTRATOR && sender.id != Config.admin) {
                         group.sendMessage("没有权限")
                     } else {
-                        val key = content.substring(4).trim()
+                        val key = content.substring(4).trim().lowercase()
                         if (key.isNotEmpty()) {
-                            if (key !in QunDb.data && key !in DefaultQunDb.data) {
+                            if (key !in QunDb.data) {
                                 group.sendMessage("词条不存在")
                             } else {
                                 QunDb.data -= key
-                                DefaultQunDb.data -= key
                                 group.sendMessage("删除词条成功")
                             }
                         }
                     }
                 } else if (content.startsWith("查询词条 ") || content.startsWith("搜索词条 ")) {
-                    val key = content.substring(4).trim()
+                    val key = content.substring(4).trim().lowercase()
                     if (key.isNotEmpty()) {
-                        val res = TreeSet<String>()
-                        res += QunDb.data.keys.filter { key in it }
-                        res += DefaultQunDb.data.keys.filter { key in it }
+                        val res = QunDb.data.keys.filter { key in it }
                         if (res.isNotEmpty()) {
                             val res1 = res.withIndex().map { (i, v) -> "${i + 1}. $v" }
                             group.sendMessage(
@@ -227,18 +224,12 @@ internal object PluginMain : KotlinPlugin(
                         saveImage(message2)
                         group.sendMessage(lastKey.second)
                     } else { // 调用词条
-                        val value = QunDb.data[content]
+                        val value = QunDb.data[content.lowercase()]
                         if (value != null) {
                             val mc1 = MessageChain.deserializeFromJsonString(value)
                             val mc2 = ensureImage(group, mc1)
                             if (mc1 !== mc2) QunDb.data += content to mc2.serializeToJsonString()
                             group.sendMessage(mc2)
-                        } else {
-                            lookUpInDefaultQunDb(group, content)?.let {
-                                QunDb.data += content to it.serializeToJsonString()
-                                saveImage(it)
-                                group.sendMessage(it)
-                            }
                         }
                     }
                 }
@@ -280,27 +271,6 @@ internal object PluginMain : KotlinPlugin(
             }
         }
     }
-
-    private suspend fun lookUpInDefaultQunDb(group: Group, key: String): MessageChain? =
-        DefaultQunDb.data[key]?.mapNotNull { v ->
-            when (v.type) {
-                "plain" ->
-                    v.text.toPlainText()
-
-                "image" -> {
-                    runCatching {
-                        getPic(v.url).use { `is` ->
-                            `is`.toExternalResource().use { group.uploadImage(it) }
-                        }
-                    }.getOrElse {
-                        logger.error("获取或上传图片失败", it)
-                        null
-                    }
-                }
-
-                else -> null
-            }
-        }?.toMessageChain()
 
     internal const val ua =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36 Edg/97.0.1072.69"
