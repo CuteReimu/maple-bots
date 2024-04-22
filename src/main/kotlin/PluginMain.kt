@@ -38,7 +38,7 @@ internal object PluginMain : KotlinPlugin(
         ImageCache.reload()
         FindRoleData.reload()
         LevelExpData.reload()
-        QunDb.data = QunDb.data.mapKeys { it.key.lowercase() }
+        QunDb.data = QunDb.data.mapKeys { it.key.dealKey() }
         Timer().schedule(object : TimerTask() {
             override fun run() {
                 launch {
@@ -160,7 +160,7 @@ internal object PluginMain : KotlinPlugin(
                     if (sender.permission < MemberPermission.ADMINISTRATOR && sender.id != Config.admin) {
                         group.sendMessage("没有权限")
                     } else {
-                        val key = content.substring(4).trim().lowercase()
+                        val key = content.substring(4).trim().dealKey()
                         if (key.isNotEmpty()) {
                             if (key in QunDb.data) {
                                 group.sendMessage("词条已存在")
@@ -174,7 +174,7 @@ internal object PluginMain : KotlinPlugin(
                     if (sender.permission < MemberPermission.ADMINISTRATOR && sender.id != Config.admin) {
                         group.sendMessage("没有权限")
                     } else {
-                        val key = content.substring(4).trim().lowercase()
+                        val key = content.substring(4).trim().dealKey()
                         if (key.isNotEmpty()) {
                             if (key !in QunDb.data) {
                                 group.sendMessage("词条不存在")
@@ -188,7 +188,7 @@ internal object PluginMain : KotlinPlugin(
                     if (sender.permission < MemberPermission.ADMINISTRATOR && sender.id != Config.admin) {
                         group.sendMessage("没有权限")
                     } else {
-                        val key = content.substring(4).trim().lowercase()
+                        val key = content.substring(4).trim().dealKey()
                         if (key.isNotEmpty()) {
                             if (key !in QunDb.data) {
                                 group.sendMessage("词条不存在")
@@ -199,7 +199,7 @@ internal object PluginMain : KotlinPlugin(
                         }
                     }
                 } else if (content.startsWith("查询词条 ") || content.startsWith("搜索词条 ")) {
-                    val key = content.substring(4).trim().lowercase()
+                    val key = content.substring(4).trim().dealKey()
                     if (key.isNotEmpty()) {
                         val res = QunDb.data.keys.filter { key in it }
                         if (res.isNotEmpty()) {
@@ -224,7 +224,7 @@ internal object PluginMain : KotlinPlugin(
                         saveImage(message2)
                         group.sendMessage(lastKey.second)
                     } else { // 调用词条
-                        val value = QunDb.data[content.lowercase()]
+                        val value = QunDb.data[content.dealKey()]
                         if (value != null) {
                             val mc1 = MessageChain.deserializeFromJsonString(value)
                             val mc2 = ensureImage(group, mc1)
@@ -354,4 +354,9 @@ internal object PluginMain : KotlinPlugin(
         deleteFileSet.forEach { File("chat-images${File.separatorChar}$it").delete() }
         ImageCache.data = ImageCache.data.filter { (imageId, _) -> imageId in remainFileSet }
     }
+
+    private fun String.dealKey() =
+        replace("零", "0").replace("一", "1").replace("二", "2").replace("三", "3")
+            .replace("四", "4").replace("五", "5").replace("六", "6").replace("七", "7")
+            .replace("八", "8").replace("九", "9").lowercase()
 }
