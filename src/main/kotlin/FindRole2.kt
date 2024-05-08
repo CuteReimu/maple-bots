@@ -123,7 +123,7 @@ object FindRole2 {
             values = values.asReversed().take(14)
             if (values.any { it.first != 0L }) {
                 val dataset = DefaultCategoryDataset()
-                values.asReversed().take(14).forEach { dataset.addValue(it.first / 1000000000.0, "", it.second) }
+                values.forEach { dataset.addValue(it.first / 1000000000.0, "", it.second) }
                 val chart = ChartFactory.createBarChart(
                     "",
                     "",
