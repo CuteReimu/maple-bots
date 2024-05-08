@@ -48,11 +48,11 @@ object FindRole {
         val resp = PluginMain.client.newCall(request).execute()
         if (resp.code == 404) {
             resp.close()
-            return PlainText("${name}已身死道消")
+            return FindRole2.doStuff(group, name)
         }
         if (resp.code != 200) {
             resp.close()
-            throw Exception("请求错误，错误码：${resp.code}，返回内容：${resp.message}")
+            return FindRole2.doStuff(group, name)
         }
         val body = resp.body!!.string()
         val data = json.parseToJsonElement(body).jsonObject["CharacterData"]!!.decode<CharacterData>()
