@@ -8,6 +8,8 @@
 [![](https://img.shields.io/github/license/CuteReimu/maple-bots)](https://github.com/CuteReimu/maple-bots/blob/master/LICENSE "许可协议")
 </div>
 
+**本项目已迁移至 https://github.com/CuteReimu/YinYangJade**
+
 ## 编译
 
 ```shell
